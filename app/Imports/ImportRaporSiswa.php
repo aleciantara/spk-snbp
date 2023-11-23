@@ -104,8 +104,8 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
          // Create a list of subjects that are "wajib"
         $wajibSubjects = [
             'Pendidikan Agama dan Budi Pekerti',
-            'Bahasa Indonesia',
             'Pendidikan Pancasila dan Kewarganegaraan',
+            'Bahasa Indonesia',
             'Matematika',
             'Sejarah Indonesia',
             'Bahasa Inggris',
