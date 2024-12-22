@@ -21,6 +21,9 @@
                 <div class="card">
                     <div class="card-header">
                         <h4>Form Data Prestasi</h4>
+                        <div class="card-header-action">
+                            <a class="btn btn-primary" data-toggle="modal" data-target="#poinPrestasiModal">Panduan Poin Prestasi</a>
+                        </div>
                     </div>
                         @if($errors->any())
                             <div class="alert alert-danger">
@@ -32,12 +35,12 @@
                             </div>
                         @endif
 
-                        <div class="card-body pb-0">
+                        <div class="card-body ">
                             <div class="row m-4">
 
                                 <div class="form-row col-md-10">
                                     <div class="form-group col-md-2">
-                                        <label class="form-label" for="judul">Nama Siswa</label>
+                                        <label class="form-label" for="nama">Nama Siswa</label>
                                     </div>
 
                                     
@@ -48,25 +51,22 @@
                                             <input type="hidden" name="nama[]" value="{{ $siswa->nisn }}">
                                             </div>
                                         @elseif (!$siswa)
-                                        <div style="margin-bottom:10px"id="baris-0">
-                                            <select  class="form-control select2" name="nama[]" id="nama_0" required>
-                                                <option ></option>
+                                        <div style="margin-bottom:10px" id="baris-0" class="position-relative">
+                                            <select class="form-control select2" name="nama[]" id="nama_0" required>
+                                                <option></option>
                                                 @foreach ($siswas as $siswa)
                                                     <option value="{{ $siswa->nisn }}" {{ old('nama_0') == $siswa->nisn  ? 'selected' : '' }}>{{ $siswa->nisn }} - {{ $siswa->nama }}</option>
                                                 @endforeach
-                                                
-                                            </select>                                            
+                                            </select>
                                         </div>
-                                        
                                         @endif
 
-                                        
-                                        <div  id="NamaSiswaBaru">
+                                        <div id="NamaSiswaBaru">
                                             <!-- Baris baru akan ditambahkan di sini -->
                                         </div>
-            
+
                                         <button type="button" id="tambahNamaSiswa" class="btn btn-light">
-                                                + Nama Siswa
+                                            + Nama Siswa
                                         </button>
                                     </div>
                                 </div>
@@ -123,7 +123,6 @@
                                     <div class="form-group col-md-3">
                                         <select name="tingkat" id="tingkat" class="form-control{{ $errors->has('tingkat') ? ' is-invalid' : '' }}" required>
                                             <option value="">Pilih Tingkat</option>
-                                            <option value="Sekolah" {{ old('tingkat') == 'Sekolah' ? 'selected' : '' }}>Sekolah</option>
                                             <option value="Kabupaten/Kota" {{ old('tingkat') == 'Kabupaten/Kota' ? 'selected' : '' }}>Kabupaten/Kota</option>
                                             <option value="Provinsi" {{ old('tingkat') == 'Provinsi' ? 'selected' : '' }}>Provinsi</option>
                                             <option value="Nasional" {{ old('tingkat') == 'Nasional' ? 'selected' : '' }}>Nasional</option>
@@ -140,7 +139,7 @@
                                         <label class="form-label" for="waktu">Tgl Lomba</label>
                                     </div>
                                     <div class="form-group col-md-3">
-                                        <input type="date" class="form-control" id="waktu" name="waktu">
+                                        <input type="date" class="form-control" id="waktu" name="waktu" {{ old('waktu') }}>
                                     </div>
                                 </div> 
 
@@ -149,9 +148,22 @@
                                         <label class="form-label" for="poin">Poin</label>
                                     </div>
                                     <div class="form-group col-sm-2">
-                                        <input type="number" class="form-control" oninput="validatePoin(this)" id="poin" name="poin" step="10">
+                                        <input type="text" class="form-control" oninput="evaluateExpression(this)" id="poin" name="poin" >
+                                        <input type="hidden" id="raw_poin">
+                                        <span id="calculated_poin" style="display:none;"></span>
+                                        <button class="btn btn-primary" type="button" id="apply_poin" style="display:none;" onclick="applyCalculatedValue()">Apply</button>
                                     </div>
                                 </div>
+                                
+
+                                {{-- <div class="form-row col-md-10">
+                                    <div class="form-group col-md-2">
+                                        <label class="form-label" for="poin">Poin</label>
+                                    </div>
+                                    <div class="form-group col-sm-2">
+                                        <input type="text" class="form-control" oninput="evaluateExpression(this)" id="poin" name="poin" >
+                                    </div>
+                                </div> --}}
 
                                 <div class="form-row col-md-10">
                                     <div class="form-group col-md-2">
@@ -178,6 +190,26 @@
     </div>
 @endsection
 
+<div class="modal fade" id="poinPrestasiModal" tabindex="-1" role="dialog" aria-labelledby="poinPrestasiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="poinPrestasiModalLabel">Panduan Poin Prestasi</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body mb-0 pb-0">
+                <div class="form-group">
+                    <img src="{{ asset('panduan-poin-prestasi.jpg') }}" alt="Panduan Poin Prestasi" class="img-fluid">
+                </div>
+            </div>
+            
+        </div>
+    </div>    
+</div>
+
+
 @push('scripts')
     <!-- JS Libraries -->
     <script src="{{ asset('library/simpleweather/jquery.simpleWeather.min.js') }}"></script>
@@ -187,6 +219,8 @@
     <script src="{{ asset('library/summernote/dist/summernote-bs4.min.js') }}"></script>
     <script src="{{ asset('library/chocolat/dist/js/jquery.chocolat.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+
 
     <!-- Page Specific JS File -->
     <script src="{{ asset('js/page/index-0.js') }}"></script>
@@ -196,13 +230,47 @@
             input.value = input.value.replace(/[^a-zA-Z0-9-: ]/g, '');
         }
 
-        function validatePoin(input) {
-            input.value = input.value.replace(/[^0-9]/g, '');
+        let timeout = null;
+
+        function evaluateExpression(input) {
+            clearTimeout(timeout);
+            const rawInput = input.value;
+            document.getElementById('raw_poin').value = rawInput;
+
+            timeout = setTimeout(() => {
+                try {
+                    // Evaluate the expression using math.js
+                    const result = math.evaluate(rawInput);
+                    
+                    // If result is a valid number, show it formatted to two decimal places
+                    if (!isNaN(result)) {
+                        const formattedResult = result.toFixed(2);
+                        document.getElementById('calculated_poin').innerText = `Calculated: ${formattedResult}`;
+                        document.getElementById('calculated_poin').style.display = 'inline';
+                        document.getElementById('apply_poin').style.display = 'inline';
+                        document.getElementById('apply_poin').dataset.calculatedValue = formattedResult;
+                    } else {
+                        document.getElementById('calculated_poin').style.display = 'none';
+                        document.getElementById('apply_poin').style.display = 'none';
+                    }
+                } catch (e) {
+                    // If there is an error in evaluation, hide the calculated result and button
+                    document.getElementById('calculated_poin').style.display = 'none';
+                    document.getElementById('apply_poin').style.display = 'none';
+                    console.error("Invalid expression");
+                }
+            }, 500); // Adjust the debounce delay as needed
         }
+
+        function applyCalculatedValue() {
+            const calculatedValue = document.getElementById('apply_poin').dataset.calculatedValue;
+            document.getElementById('poin').value = calculatedValue;
+        }
+
     </script>
 
-    <script>    
-        document.addEventListener("DOMContentLoaded", function () {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
         // Initialize Select2 for the initial nama field
         $('.select2').select2({
             placeholder: 'Pilih Nama Siswa',
@@ -214,7 +282,7 @@
 
         addButton.addEventListener("click", function () {
             const newRow = `
-            <div style="margin-bottom:10px"id="baris-${index}">
+            <div style="margin-bottom:10px" id="baris-${index}" class="position-relative">
                 <select class="form-control select2" name="nama[]" id="nama_${index}" required>
                     <option></option>
                     @foreach ($siswas as $siswa)
@@ -244,8 +312,7 @@
             }
         });
     });
-
-    </script>
+</script>
 
 <script>
     const fileInput = document.getElementById('file');
@@ -273,15 +340,23 @@
     }
 
     .hapus-baris {
-        background-color: transparent;
-        border: none;
-        color: red;
-        cursor: pointer;
-        font-size: 20px;
-        padding: 0; /* Menghilangkan padding agar menjadi bulat */
-        margin-left: 500px;
-        margin-top: -34px; Menempelkan tombol ke sisi kiri
-        position: absolute; /* Menjadikan tombol sebagai posisi absolut */
+    background-color: red;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 10px;
+    margin-left: 10px;
+    margin-top: -5px;
+    position: absolute; /* Menjadikan tombol sebagai posisi absolut */
+    left: 580px; /* Adjust this value to move the button to the left */
+    top: 50%;
+    transform: translateY(-50%);
+    }
+
+
+    .position-relative {
+        position: relative;
     }
 
 </style>

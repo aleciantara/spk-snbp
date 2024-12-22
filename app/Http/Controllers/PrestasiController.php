@@ -10,6 +10,8 @@ use App\Models\SpkKriteria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Response;
 
 class PrestasiController extends Controller
 {
@@ -19,25 +21,31 @@ class PrestasiController extends Controller
         $searchQuery = $request->input('search');
         $statusFilters = $request->input('status', []); // Default to an empty array
 
-        $query = Prestasi::with('prestasiSiswa.siswas') // Ensure the relationships are properly defined in your models
-        ->select('prestasis.*') // Select all columns from the "prestasis" table
-        ->join('prestasi_siswa', 'prestasis.id', '=', 'prestasi_siswa.prestasi_id')
-        ->join('siswas', 'prestasi_siswa.nisn', '=', 'siswas.nisn')
-        ->where(function ($query) use ($searchQuery) {
-            $query->where('prestasis.prestasi', 'like', "%$searchQuery%")
-                ->orWhere('siswas.nama', 'like', "%$searchQuery%");
-        })->distinct();
+        // Subquery to get distinct prestasi IDs
+        $distinctPrestasiIdsQuery = Prestasi::select('prestasis.id')
+            ->join('prestasi_siswa', 'prestasis.id', '=', 'prestasi_siswa.prestasi_id')
+            ->join('siswas', 'prestasi_siswa.nisn', '=', 'siswas.nisn')
+            ->where(function ($query) use ($searchQuery) {
+                $query->where('prestasis.prestasi', 'like', "%$searchQuery%")
+                    ->orWhere('siswas.nama', 'like', "%$searchQuery%");
+            })
+            ->distinct();
 
-        
         // Apply status filter if any status is selected
         if (!empty($statusFilters)) {
-            $query->whereIn('status', $statusFilters);
+            $distinctPrestasiIdsQuery->whereIn('prestasis.status', $statusFilters);
         }
 
-        // Continue with ordering and pagination
-        $prestasis = $query->orderBy('prestasis.updated_at', 'desc')
-                        ->paginate(30);
+        $distinctPrestasiIds = $distinctPrestasiIdsQuery->pluck('prestasis.id');
 
+
+        $distinctPrestasiIds = $distinctPrestasiIdsQuery->pluck('prestasis.id');
+
+        // Fetch the prestasi using the distinct IDs and paginate
+        $prestasis = Prestasi::with('prestasiSiswa.siswas')
+            ->whereIn('id', $distinctPrestasiIds)
+            ->orderBy('updated_at', 'desc')
+            ->paginate(10);
         // dd($prestasis);
 
         // Pass the fetched data to the view
@@ -69,8 +77,8 @@ class PrestasiController extends Controller
             'juara' => 'required',
             'tingkat' => 'required',
             'waktu' => 'required',
-            'poin' => 'required|integer', // Change this to the appropriate validation rules
-            'file' => 'required|mimes:png,jpeg',
+            'poin' => 'required|numeric',
+            'file' => 'required|mimes:png,jpeg,pdf',
         ]);
     
         if ($validator->fails()) {
@@ -91,10 +99,11 @@ class PrestasiController extends Controller
 
         // Handle the file upload
         if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $filename = time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('uploads'), $filename);
-            $prestasi->file = $filename;
+            $fileExtension = $request->file('file')->getClientOriginalExtension();
+
+            // Store the file in the public/templates directory
+            $filePath = $request->file('file')->storeAs('public/prestasis', "prestasi_{$request->input('prestasi')}.{$fileExtension}");
+            $prestasi->file = "prestasi_{$request->input('prestasi')}.{$fileExtension}";
         }
     
         // Save the Prestasi
@@ -112,17 +121,25 @@ class PrestasiController extends Controller
                 $this->storeSpkKriteria($nisn);
             }
         }
+
         if ($previousUrl) {
-            return redirect($previousUrl)->with('success', 'Prestasi added successfully');
+            return redirect($previousUrl)->with('success', 'Prestasi berhasil ditambahkan');
         } else {
             return redirect()->route('prestasi.index'); // Default URL if there's no previous URL
         }
     
     }
 
+    public function downloadGambar($id)
+    {
+        $prestasi = Prestasi::findOrFail($id);
+
+        $download_path = ( public_path() . '\\storage\\prestasis\\' . $prestasi->file );
+        return( Response::download( $download_path ) );
+    }
+
     public function edit($id)
     {
-         // Store the previous URL and Prestasi ID in the session
          // Store the previous URL in the session
         session(['previous_url' => url()->previous()]);
 
@@ -147,8 +164,8 @@ class PrestasiController extends Controller
             'juara' => 'required|string',
             'tingkat' => 'required|string',
             'waktu' => 'required|date',
-            'poin' => 'required|integer',
-            'file' => 'nullable|file|mimes:jpeg,png|max:2048', 
+            'poin' => 'required|numeric',
+            'file' => 'nullable|file|mimes:jpeg,png,pdf|max:2048', 
             'status' => 'required|string',
         ]);
 
@@ -175,18 +192,16 @@ class PrestasiController extends Controller
             }
 
             if ($request->hasFile('file')) {
-                // Delete the previous file if it exists
-                $image_path = (public_path('uploads') .'\\'. $prestasi->file);
+                $filePath = public_path("storage\\prestasis\\{$prestasi->file}");
+                if (File::exists($filePath)) {
+                    File::delete($filePath);
+                }
 
-                // check if the image indeed exists
-                if(file_exists($image_path)){
-                    unlink($image_path);
-                } 
-            
-                $file = $request->file('file');
-                $filename = time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads'), $filename);
-                $prestasi->file = $filename;
+                $fileExtension = $request->file('file')->getClientOriginalExtension();
+
+            // Store the file in the public/templates directory
+            $filePath = $request->file('file')->storeAs('public/prestasis', "prestasi_{$request->input('prestasi')}.{$fileExtension}");
+            $prestasi->file = "prestasi_{$request->input('prestasi')}.{$fileExtension}";
             }
 
             // Save the updated Prestasi record
@@ -204,7 +219,7 @@ class PrestasiController extends Controller
             }
             
             if ($previousUrl) {
-                return redirect($previousUrl)->with('success', 'Prestasi updated successfully');
+                return redirect($previousUrl)->with('success', 'Prestasi berhasil diupdate');
             } else {
                 return redirect()->route('prestasi.index'); // Default URL if there's no previous URL
             }
@@ -216,16 +231,16 @@ class PrestasiController extends Controller
     public function destroy(Prestasi $prestasi)
     {
         $prestasi = Prestasi::find($prestasi->id);
-        $image_path = (public_path('uploads') .'\\'. $prestasi->file);
 
         // check if the image indeed exists
-        if(file_exists($image_path)){
-            unlink($image_path);
-        } 
+        $filePath = public_path("storage\\prestasis\\{$prestasi->file}");
+        if (File::exists($filePath)) {
+            File::delete($filePath);
+        }
             
         $prestasi->delete();
 
-        return redirect()->back()->with('success', 'Prestasi deleted successfully');
+        return redirect()->back()->with('success', 'Prestasi berhasil dihapus');
     }
 
     public function storeSpkKriteria($nisn)

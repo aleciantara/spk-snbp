@@ -1,10 +1,14 @@
 <div class="main-sidebar sidebar-style-2">
     <aside id="sidebar-wrapper">
         <div class="sidebar-brand">
-            <a href="index.html">SPK SNBP SMAN 1 SMD</a>
+            <a href="index.html">
+                <img src="{{ asset('icon.png') }}" alt="Icon" width="30" height="30">
+                SPK SNBP SMAN 1 SMD
+            </a>
         </div>
+        
         <div class="sidebar-brand sidebar-brand-sm">
-            <a href="index.html">St</a>
+            <a href="index.html"><img src="{{ asset('icon.png') }}" alt="Icon" width="30" height="30"></a>
         </div>
         <ul class="sidebar-menu">
             @auth
@@ -32,7 +36,9 @@
                     
                     <li class="menu-header">Sistem Pendukung Keputusan</li>
                     <li class="nav-item dropdown">
-                        <a href="/spk" class="nav-link"><i class="fas fa-file-code"></i><span> SPK Eligible SNBP</span></a>
+                        {{-- <a href="/spk" class="nav-link"><i class="fas fa-file-code"></i><span> SPK Eligible SNBP</span></a> --}}
+                        {{-- <a href="{{ url('spk?initial=true') }}"><i class="fas fa-file-code"></i><span> SPK Eligible SNBP</span></a> --}}
+                        <a href="{{ url('spk') }}" id="spkLink"><i class="fas fa-file-code"></i><span> SPK Eligible SNBP</span></a>
                     </li>
                     <li class="nav-item dropdown">
                         <a href="#" onclick='window.open("/spkPrint");return false;'><i class="fas fa-print"></i><span> Print SPK Eligible SNBP</a>
@@ -45,16 +51,16 @@
                     </li> --}}
                     <li class="menu-header">Surat</li>
                     <li class="nav-item dropdown">
-                        <a href="/surat" class="nav-link"><i class="fas fa-file-code"></i><span> List Surat</span></a>
+                        <a href="/surat" class="nav-link"><i class="fas fa-file-code"></i><span> List Pengajuan Surat</span></a>
                     </li>
                     <li class="menu-header">Setting Akun</li>
-                    
+                    <li class="nav-item dropdown">
+                        <a href="/users" class="nav-link"><i class="fas fa-user"></i></i><span> List User</span></a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a href="/admin/editPassword" class="nav-link"><i class="fas fa-key"></i></i><span> Ubah Password</span></a>
                     </li>
-                    {{-- <li class="nav-item dropdown">
-                        <a href="/admin/createUser" class="nav-link"><i class="fas fa-cog"></i></i><span> Tambah User</span></a>
-                    </li> --}}
+                    
                     
                 @elseif (Auth::user()->role == 'user')
                     <li class="menu-header">Dashboard</li>
@@ -115,18 +121,6 @@
                 </li>
                 
                 @endif
-            @else
-                <li class="menu-header">Dashboard</li>
-                <li class="nav-item dropdown">
-                    <a href="/admin-dashboard" class="nav-link"><i class="fas fa-fire"></i><span>Dashboard</span></a>
-                </li>
-                <li class="menu-header">Authentication</li>
-                <li class="nav-item dropdown">
-                    <a href="/login" class="nav-link"><i class="fas fa-login"></i><span>Login</span></a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a href="/register" class="nav-link"><i class="fas fa-register"></i><span>Register</span></a>
-                </li>
             @endauth
         </ul>
         
@@ -139,3 +133,16 @@
         </div> --}}
     </aside>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var spkLink = document.getElementById('spkLink');
+    
+    spkLink.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default link action
+        var url = new URL(this.href);
+        url.searchParams.append('initial', 'true'); // Add the query parameter
+        window.location.href = url.toString(); // Redirect with the updated URL
+    });
+});
+</script>

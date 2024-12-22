@@ -43,7 +43,7 @@ class RaporController extends Controller
     
         if (!$siswa) {
             // Handle the case where the Siswa is not found (optional)
-            return redirect()->route('rapor.edit', $nisn)->with('error', 'Siswa not found.');
+            return redirect()->route('rapor.edit', $nisn)->with('error', 'Data siswa tidak ditemukan');
         }
     
         $arrayCount = count($request->pelajaran);
@@ -131,7 +131,7 @@ class RaporController extends Controller
         );
     
         // Optionally, you can redirect to a success page or show a success message
-        return redirect()->route('rapor.edit', $nisn)->with('success', 'Rapor data has been updated successfully.');
+        return redirect()->route('rapor.edit', $nisn)->with('success', 'Rapor berhasil diupdate');
     }
     
 }

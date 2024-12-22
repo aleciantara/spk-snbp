@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'siswa')
+@section('title', 'List Siswa')
 
 @push('style')
     <!-- CSS Libraries -->
@@ -116,11 +116,11 @@
                                                 {{-- <a href="{{ route('siswa.read', ['nisn' => $siswa->nisn]) }}" class="btn btn-sm btn-success fancybox" data-fancybox-type="ajax"><i class="fas fa-eye"></i></a> --}}
                                                 <a href="{{ route('siswa.edit', ['nisn' => $siswa->nisn]) }}" class="btn btn-md btn-warning"><i class="fas fa-edit"></i></a>
                                                 <a href="{{ route('rapor.edit', ['nisn' => $siswa->nisn]) }}" class="btn btn-md btn-primary fancybox" data-fancybox-type="ajax"><i class="fas fa-newspaper"></i></a>
-                                                <a href="{{ route('siswa.prestasi', ['nisn' => $siswa->nisn]) }}" class="btn btn-md btn-info fancybox" data-fancybox-type="ajax"><i class="fas fa-award"></i></a>
-                                                <form action="{{ route('siswa.destroy', ['siswa' => $siswa])}}" method="POST" class="d-inline">
+                                                <a href="{{ route('siswa.prestasi', ['nisn' => $siswa->nisn]) }}" class="btn btn-md btn-info fancybox"  data-fancybox-type="ajax"><i class="fas fa-award"></i></a>
+                                                <form action="{{ route('siswa.destroy', ['siswa' => $siswa])}}" method="POST" class="d-inline" id="delete-form-{{$siswa->nisn}}">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-md btn-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus siswa ini?')"><i class="fas fa-trash"></i></button>
+                                                    <button type="submit" class="btn btn-danger trigger-fire-modal-7" data-confirm="Yakin?| ingin menghapus data {{$siswa->nisn}} - {{$siswa->nama}}?" data-confirm-yes="submitDel('{{$siswa->nisn}}')"><i class="fas fa-trash"></i></button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -138,7 +138,8 @@
                             <div class="card-footer text-center" bis_skin_checked="1">
                                 <nav class="d-inline-block">
                                 <ul class="pagination mt-3 mb-1">
-                                    {{ $siswas->links('pagination::bootstrap-4') }}
+                                    {{-- {{ $siswas->links('pagination::bootstrap-4') }} --}}
+                                    {{ $siswas->appends(request()->query())->links('pagination::bootstrap-4') }}
                                 </ul>
                                 </nav>
                             </div>
@@ -148,9 +149,8 @@
             </div>
         </section>
     </div>
-@endsection
 
-<!-- import Excel File Modal -->
+    <!-- import Excel File Modal -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -184,16 +184,9 @@
                             <div class="col">
                                 <select class="form-control" id="kelasApa" name="kelasApa" required>
                                     <option value="">Pilih Kelas</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
+                                    @for ($i = 1; $i <= 10; $i++)
+                                        <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
                                 </select>
                             </div>
                         </div>
@@ -210,16 +203,22 @@
 
                     <div class="form-group">
                         <label for="excelFile">Pilih Excel:</label>
-                        <label style="color:red">*Maks 1 file per Upload</label>
-                        <input type="file" class="form-control-file" id="excel_file" name="excel_file" accept=".xlsx, .xls" required>
+                        <label style="color:red">*Maks 1 file per upload</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="excel_file" name="excel_file" accept=".xlsx, .xls" required>
+                            <label class="custom-file-label" for="customFile">Browse file</label>
+                        </div>
                     </div>
-
-                    <button type="submit" class="btn btn-primary">IMPORT</button>
+                    
+                    <button type="submit" style="float: right;" class="btn btn-primary">IMPORT</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+
 
 
 @push('scripts')
@@ -244,6 +243,18 @@
     function validateSearchInput(input) {
         // Use a regular expression to allow letters, numbers, spaces, and hyphens
         input.value = input.value.replace(/[^a-zA-Z0-9\s\-]/g, '');
+    }
+
+    document.getElementById('excel_file').addEventListener('change', function(event) {
+        var input = event.target;
+        var label = input.nextElementSibling;
+        var fileName = input.files[0].name;
+        label.textContent = fileName;
+    }); 
+
+    function submitDel(siswaNisn) {
+        const form = document.getElementById('delete-form-' + siswaNisn);
+        form.submit();
     }
 </script>
 

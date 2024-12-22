@@ -16,7 +16,7 @@ class UserAccess
     public function handle(Request $request, Closure $next, $role): Response
     {
         if (auth()->user()->role == $role){
-        return $next($request);
+            return $next($request);
         }
         return response()->view('error/404', [], 404);
         // return response()->json(['Anda tidak memiliki akses halaman ini']); 

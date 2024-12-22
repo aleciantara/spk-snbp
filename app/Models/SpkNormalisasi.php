@@ -12,6 +12,10 @@ class SpkNormalisasi extends Model
     
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'nisn' => 'string',
+    ];
+
     protected $fillable = [
         'nisn',
         'rapor',

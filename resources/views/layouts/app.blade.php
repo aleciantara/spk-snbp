@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"
         name="viewport">
-    <title>@yield('title') &mdash; Stisla</title>
+    <title>@yield('title')</title>
 
     <!-- General CSS Files -->
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png"/>
     <link rel="stylesheet"
         href="{{ asset('library/bootstrap/dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet"
@@ -38,7 +39,6 @@
         gtag('config', 'UA-94034622-3');
     </script>
     <!-- END GA -->
-</head>
 </head>
 
 <body>

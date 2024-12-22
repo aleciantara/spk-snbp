@@ -10,7 +10,7 @@ class CreateNewRaporsTable2 extends Migration
     {
         Schema::create('rapors', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('nisn');
+            $table->string('nisn');
             $table->string('pelajaran');
             $table->string('jenis');
             $table->float('sem_1_nilai_p')->nullable();

@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Rapor extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'id';
+    protected $foreignKey = 'nisn';
 
-    protected $primaryKey = 'nisn';
+    protected $casts = [
+        'nisn' => 'string',
+    ];
 
     protected $fillable = [
         'nisn',

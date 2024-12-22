@@ -67,26 +67,21 @@
                     
                 </form>
 
-                @php
-                    // Retrieve the tab parameter from the URL or default to 'MIPA'
-                    $activeTab = request()->query('tab', 'MIPA');
-                @endphp
-                
                 <div class="card-body p-4">
                     <ul class="nav nav-tabs">
                         <li class="nav-item">
-                            <a class="nav-link {{ $activeTab === 'MIPA' ? 'active' : '' }}" id="mipa-tab" data-toggle="tab" href="#mipa-table" data-href="#mipa-table">MIPA</a>
+                            <a class="nav-link active" id="mipa-tab" data-toggle="tab" href="#mipa-table">MIPA</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ $activeTab === 'IPS' ? 'active' : '' }}" id="ips-tab" data-toggle="tab" href="#ips-table" data-href="#ips-table">IPS</a>
+                            <a class="nav-link" id="ips-tab" data-toggle="tab" href="#ips-table">IPS</a>
                         </li>
                     </ul>
-                
+                    
                     <div class="tab-content">
-                        <div class="tab-pane fade {{ $activeTab === 'MIPA' ? 'show active' : '' }}" id="mipa-table">
-                            @include('partials.spkTable', ['siswas' => $siswasMIPA, 'peminatan' => 'MIPA', 'rank' => $startRankMIPA])
+                        <div class="tab-pane fade show active" id="mipa-table">
+                            @include('partials.spkTable', ['siswas' => $siswasMIPA, 'peminatan' => 'MIPA', 'rank' => $startRankMIPA] )
                         </div>
-                        <div class="tab-pane fade {{ $activeTab === 'IPS' ? 'show active' : '' }}" id="ips-table">
+                        <div class="tab-pane fade" id="ips-table">
                             @include('partials.spkTable', ['siswas' => $siswasIPS, 'peminatan' => 'IPS', 'rank' => $startRankIPS])
                         </div>
                     </div>
@@ -168,46 +163,54 @@
 
 
 @push('scripts')
+{{-- <script>
+        $(document).ready(function() {
+            $('.fancybox').click(function() {
+                $.fancybox.open({
+                    src: $(this).attr('href'),
+                    type: 'ajax',
+                    opts: {
+                        width: '80%',
+                        height: 'auto',
+                        autoSize: false,
+                    }
+                });
 
+                return false;
+            });
+        });
+</script> --}}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Check URL hash and query parameter on page load
-    var urlParams = new URLSearchParams(window.location.search);
-    var tab = urlParams.get('tab');
-    var hash = window.location.hash;
-
-    // If there is a tab query param, switch to the correct tab
-    // if (tab) {
-    //     var targetTab = document.querySelector('a[href="#' + tab + '-table"]');
-    //     if (targetTab) {
-    //         targetTab.click();
-    //     }
-    // }
-
-    // If no query param, check for hash in the URL
-    if (!tab && hash) {
-        var targetTab = document.querySelector('a[data-href="' + hash + '"]');
-        if (targetTab) {
-            targetTab.click();
-        }
-    }
-
-    // Update URL on tab change
-    var tabs = document.querySelectorAll('.nav-link');
-    tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            var href = this.getAttribute('href');
-            if (href) {
-                // Update both the query string and the hash
-                var url = new URL(window.location);
-                url.searchParams.set('tab', href.substring(1, href.indexOf('-')));
-                window.history.replaceState(null, null, url.href);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Retrieve the active tab from localStorage
+        var activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            var tabElement = document.querySelector('a[href="' + activeTab + '"]');
+            if (tabElement) {
+                var bootstrapTab = new bootstrap.Tab(tabElement);
+                bootstrapTab.show();
             }
+        }
+
+        // Add event listeners to tab links
+        var tabs = document.querySelectorAll('.nav-tabs a');
+        tabs.forEach(function(tab) {
+            tab.addEventListener('shown.bs.tab', function(event) {
+                var href = event.target.getAttribute('href');
+                localStorage.setItem('activeTab', href);
+            });
         });
     });
-});
 
+    // Store a test value
+localStorage.setItem('testKey', 'testValue');
 
+// Retrieve the test value
+console.log(localStorage.getItem('testKey')); // Should output 'testValue'
+
+</script>
+
+<script>
     function validateSearchInput(input) {
         // Use a regular expression to allow letters, numbers, spaces, and hyphens
         input.value = input.value.replace(/[^a-zA-Z0-9\s\-]/g, '');

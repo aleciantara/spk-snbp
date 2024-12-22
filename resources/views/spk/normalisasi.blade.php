@@ -56,21 +56,8 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="input-group mt-3">
-                            <!-- Search input -->
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <input type="text" name="search" class="form-control" placeholder="Ketik NISN, Nama" value="{{ request('search') }}" oninput="validateSearchInput(this)">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-primary" type="submit">Search</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
                     </form>
                     
-           
 
                     <div class="card-body p-4">
                         <ul class="nav nav-tabs">
@@ -84,12 +71,12 @@
                         <div class="tab-content">
                             <!-- MIPA Table -->
                             <div class="tab-pane fade show active" id="mipa-table">
-                                @include('partials.spkNormalisasiTable', ['peminatan' => 'MIPA'])
+                                @include('partials.spkNormalisasiTable', ['siswas' => $siswasMIPA, 'peminatan' => 'MIPA', 'rank' => $startRankMIPA])
                             </div>
 
                             <!-- IPS Table -->
                             <div class="tab-pane fade" id="ips-table">
-                                @include('partials.spkNormalisasiTable', ['peminatan' => 'IPS'])
+                                @include('partials.spkNormalisasiTable', ['siswas' => $siswasIPS, 'peminatan' => 'IPS', 'rank' => $startRankIPS])
                             </div>
                         </div>
                     </div>

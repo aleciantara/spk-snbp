@@ -12,13 +12,13 @@
     <div class="main-content" style="min-height: 535px;">
         <section class="section">
             <div class="section-header">
-                <h1>Data Prestasi Siswa</h1>
+                <h1>List Prestasi </h1>
             </div>
 
             <div>
                 <div class="card">
                     <div class="card-header">
-                        <h4>Data Prestasi Siswa </h4>
+                        <h4>Data Prestasi </h4>
                         
                         <div class="card-header-action">
                             <a href="/prestasi/create" class="btn btn-primary" >+ Tambah Prestasi</a>
@@ -89,9 +89,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php $no = ($prestasis->currentPage() - 1) * $prestasis->perPage() + 1 @endphp
                                     @forelse($prestasis as $prestasi)
                                     <tr style="font-size: 14px;">
-                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $no++ }}</td>
                                         <td>{{ $prestasi->prestasi }}</td>
                                         <td>{{ $prestasi->tingkat }}</td>
                                         <td>
@@ -109,12 +110,12 @@
                                             </div>                                            
                                         </td>
                                         <td>
-                                            <a class="btn btn-md mb-1 btn-primary fancybox" data-fancybox-type="ajax"><i class="fas fa-download"></i></a>
+                                            {{-- <a class="btn btn-md mb-1 btn-primary fancybox" data-fancybox-type="ajax"><i class="fas fa-download"></i></a> --}}
                                             <a href="{{ route('prestasi.edit', $prestasi->id) }}" class="btn btn-md mb-1 btn-warning"><i class="fas fa-edit"></i></a>
-                                            <form method="POST" action="{{ route('prestasi.destroy', ['prestasi' => $prestasi]) }}" class="d-inline">
+                                            <form method="POST" action="{{ route('prestasi.destroy', ['prestasi' => $prestasi]) }}" class="d-inline" id="delete-form-{{$prestasi->id}}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-md mb-1 btn-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus prestasi ini?')"><i class="fas fa-trash"></i></button>
+                                                <button type="submit" class="btn btn-danger trigger-fire-modal-7 mb-1" data-confirm="Yakin?| ingin menghapus data {{$prestasi->prestasi}}?" data-confirm-yes="submitDel('{{$prestasi->id}}')"><i class="fas fa-trash"></i></button>
                                             </form>
                                         </td>
                                     </tr>
@@ -143,100 +144,18 @@
     </div>
 @endsection
 
-<!-- import Excel File Modal -->
-<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="importModalLabel">Import Excel File</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form action="{{ route('siswa.import') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="form-group">
-                        <label for="kelas">Kelas:</label>
-                        <div class="row">
-                            <div class="col">
-                                <select class="form-control" id="kelasBerapa" name="kelasBerapa" required>
-                                    <option value="">Pilih Kelas Berapa</option>
-                                    <option value="X">X</option>
-                                    <option value="XI">XI</option>
-                                    <option value="XII">XII</option>
-                                </select>
-                            </div>
-                            <div class="col">
-                                <select class="form-control" id="peminatanApa" name="peminatanApa" required>
-                                    <option value="">Pilih Peminatan</option>
-                                    <option value="MIPA">MIPA</option>
-                                    <option value="IPS">IPS</option>
-                                </select>
-                            </div>
-                            <div class="col">
-                                <select class="form-control" id="kelasApa" name="kelasApa" required>
-                                    <option value="">Pilih Kelas</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                                        
-                    <div class="form-group">
-                        <label for="semester">Semester:</label>
-                        <select class="form-control" id="semester" name="semester" required>
-                            <option value="">Pilih Semester</option>
-                            <option value="Ganjil">Ganjil</option>
-                            <option value="Genap">Genap</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="excelFile">Pilih Excel:</label>
-                        <label style="color:red">*Maks 1 file per Upload</label>
-                        <input type="file" class="form-control-file" id="excel_file" name="excel_file" accept=".xlsx, .xls" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">IMPORT</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 @push('scripts')
-<script>
-        $(document).ready(function() {
-            $('.fancybox').click(function() {
-                $.fancybox.open({
-                    src: $(this).attr('href'),
-                    type: 'ajax',
-                    opts: {
-                        width: '80%',
-                        height: 'auto',
-                        autoSize: false,
-                    }
-                });
 
-                return false;
-            });
-        });
-</script>
 <script>
     function validateSearchInput(input) {
         // Use a regular expression to allow letters, numbers, spaces, and hyphens
         input.value = input.value.replace(/[^a-zA-Z0-9\s\-]/g, '');
+    }
+
+    function submitDel(prestasiId) {
+        const form = document.getElementById('delete-form-' + prestasiId);
+        form.submit();
     }
 </script>
 

@@ -12,6 +12,10 @@ class SpkPreferensi extends Model
     
     protected $primaryKey = 'id';
 
+    protected $casts = [
+        'nisn' => 'string',
+    ];
+
     protected $fillable = [
         'nisn',
         'rapor',

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Data Siswa')
+@section('title', 'Data Rapor')
 
 @push('style')
 <!-- CSS Libraries -->
@@ -16,45 +16,36 @@
         </div>
         
         
-        <div class="card">
+        <div class="card ">
             <div class="card-header">
                 <h4>Form Rapor {{$siswa->nisn}} - {{$siswa->nama}}</h4>
             </div>
 
-            <div class="card-body pb-0">
+            <div class="card-body pb-0 pt-0">
                 <div class="row m-4">
-                    <div class="row col-sm-12">
+                    <div class="row col-sm-12 justify-content-between">
                         <label for="pelajaran" class="col-sm-4 col-form-label">Mata Pelajaran</label>
-                        <label for="semester_1" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 1</label>
-                        <label for="semester_2" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 2</label>
-                        <label for="semester_3" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 3</label>
-                        <label for="semester_4" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 4</label>
-                        <label for="semester_5" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 5</label>
-                        <label for="rata_rata" class="col-sm-1 mr-3 ml-2 text-center col-form-label">Rata2</label>
+                        <label for="semester_1" class="col-sm-1 text-center col-form-label">SMT 1</label>
+                        <label for="semester_2" class="col-sm-1 text-center col-form-label">SMT 2</label>
+                        <label for="semester_3" class="col-sm-1 text-center col-form-label">SMT 3</label>
+                        <label for="semester_4" class="col-sm-1 text-center col-form-label">SMT 4</label>
+                        <label for="semester_5" class="col-sm-1 text-center col-form-label">SMT 5</label>
+                        <label for="rata_rata" class="col-sm-1  text-center col-form-label">Rata2</label>
                     </div>
 
-                    
                     @foreach ($raporData as $index => $rapor)
-                    <div class="container p-0">
-                        <div class="form-group row col-sm-12">
-                            <input class="form-control col-sm-4"  style="width: 280px; height: 27px; margin-right:31px" type="text" name="pelajaran[]" id="pelajaran" class="form-control-sm form-control" value="{{ old('pelajaran.' . $index, $rapor->pelajaran) }}" placeholder="{{ $rapor->pelajaran }}" readonly>
-
-                            @for ($i = 1; $i <= 5; $i++)
-                            <input style="width: 43px; height: 27px; margin-right:56px;" type="text" name="sem_{{ $i }}_nilai_p[]" class="form-control-sm form-control ml-6" placeholder="" value="{{ old("sem_${i}_nilai_p.${index}", $rapor["sem_${i}_nilai_p"]) }}" readonly>
-                            @endfor
-
-                            <input style="width: 43px; height: 27px;" type="text" name="rata_nilai_p[]" class="form-control-sm form-control ml-6" placeholder="{{ old("rata_nilai_p.${index}", $rapor["rata_nilai_p"]) }}" readonly>
-                            
-                        </div>
+                    <div class="row col-sm-12 justify-content-between">
+                        <input for="pelajaran" name="pelajaran[]" id="pelajaran" class=" col-sm-4 form-control-sm form-control mb-3" value="{{ old('pelajaran.' . $index, $rapor->pelajaran) }}" placeholder="{{ $rapor->pelajaran }}" readonly>
+                        @for ($i = 1; $i <= 5; $i++)
+                            <input type="text" name="sem_{{ $i }}_nilai_p[]" class="col-sm-1 text-center form-control-sm form-control mb-3 " placeholder="" value="{{ old("sem_${i}_nilai_p.${index}", $rapor["sem_${i}_nilai_p"]) }}" readonly>
+                        @endfor
+                        <input type="text" name="rata_nilai_p[]"  class="col-sm-1 text-center form-control-sm form-control mb-3 " placeholder="{{ old("rata_nilai_p.${index}", $rapor["rata_nilai_p"]) }}" readonly>
                     </div>
                     @endforeach
-                    <div class="container p-0">
-                        <div class="form-group row col-sm-12">
-                            <input style="width: 280px; height: 27px; margin-right:56px" type="text"  class="form-control col-sm-4"  value="Rata-Rata Rapor" readonly>
 
-                            <input style="width: 54px; height: 27px; margin-left:460px" type="text" class="form-control-sm form-control ml-6" value="{{$spkKriteria->rapor}}" readonly>
-                            
-                        </div>
+                    <div class="row col-sm-12 justify-content-between">
+                        <input  type="text"  class=" col-sm-4 form-control-sm form-control " value="Rata-Rata Rapor" readonly>
+                        <input type="text" name="rata_nilai_p[]"  class="col-sm-1 text-center form-control-sm form-control mb-3" value="{{$spkKriteria->rapor}}" readonly>
                     </div>
                 </div>
             </div>

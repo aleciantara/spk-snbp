@@ -11,6 +11,10 @@ class PrestasiSiswa extends Model
 
     protected $table = 'prestasi_siswa';
 
+    protected $casts = [
+        'nisn' => 'string',
+    ];
+
     protected $fillable = [
         "id",
         "prestasi_id",

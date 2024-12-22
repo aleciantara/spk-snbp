@@ -1,4 +1,4 @@
-@php $siswas = $siswas->where('peminatan', $peminatan); 
+@php 
     $kuota = $kuotaSnbps->where('peminatan', $peminatan)->pluck('kuota')->first();
 @endphp
 <table class="table-striped mb-0 table">
@@ -11,14 +11,18 @@
             <th>Prestasi</th>
             <th>Sikap</th>
             <th>Skor</th>
-            <th>Rank SNBP</th>
+            <th>Rank</th>
             @if (Auth::user()->role == 'admin')
-            <th>Aksi</th>
+                <th>Aksi</th>
             @endif
         </tr>
     </thead>
     <tbody>
-        @php $no = 1; $rank = 1; @endphp
+        @php
+        $no = ($siswas->currentPage() - 1) * $siswas->perPage() + 1;
+        // Calculate the starting rank based on the current page and the initial rank
+        
+        @endphp
 
         @forelse ($siswas as $siswa)
         <tr style="font-size: 14px;">
@@ -30,15 +34,13 @@
             <td>{{ $siswa->spk_preferensi->sikap ?? '-' }}</td>
             <td>{{ $siswa->spk_preferensi->total*100 ?? '-' }}%</td>
             <td>
-                @if ($rank <= $kuota)
-                    @if ($siswa->snbp === 'Tidak Bersedia')
-                        Tidak Bersedia
-                    @else
-                        # {{ $rank++ }}
-                    
-                    @endif
+                @if ($siswa->snbp === 'Bersedia' && $rank <= $kuota)
+                    #{{ $rank }}
+                    @php $rank++; @endphp {{-- Increment the rank only if the condition is met --}}
+                @elseif ($siswa->snbp === 'Tidak Bersedia')
+                    Tidak Bersedia
                 @else
-                    Non Legible
+                    Not Eligible
                 @endif
             </td>
             @if (Auth::user()->role == 'admin')
@@ -57,10 +59,11 @@
     @endforelse
     </tbody>
 </table>
-{{-- <div class="card-footer text-center" bis_skin_checked="1">
+<div class="card-footer text-center">
     <nav class="d-inline-block">
-    <ul class="pagination mt-3 mb-1">
-        {{ $siswas->links('pagination::bootstrap-4') }}
-    </ul>
+        <ul class="pagination mt-3 mb-1">
+            {{ $siswas->appends(['tab' => $peminatan])->links('pagination::bootstrap-4') }}
+        </ul>
     </nav>
-</div> --}}
+</div>
+

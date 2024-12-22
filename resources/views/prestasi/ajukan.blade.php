@@ -21,6 +21,9 @@
                 <div class="card">
                     <div class="card-header">
                         <h4>Form Pengajuan Prestasi</h4>
+                        <div class="card-header-action">
+                            <a class="btn btn-primary" data-toggle="modal" data-target="#poinPrestasiModal">Panduan Poin Prestasi</a>
+                        </div>
                     </div>
                         @if($errors->any())
                             <div class="alert alert-danger">
@@ -76,7 +79,7 @@
                                         <label class="form-label" for="prestasi">Judul Prestasi</label>
                                     </div>
                                     <div class="form-group col-md-8">
-                                        <input type="text" name="prestasi" id="prestasi" oninput="validatePrestasiAndPenyelenggara(this)" class="form-control{{ $errors->has('prestasi') ? ' is-invalid' : '' }}" value="{{ old('prestasi') }}" required>
+                                        <input type="text" name="prestasi" id="prestasi" placeholder="Judul Prestasi" oninput="validatePrestasiAndPenyelenggara(this)" class="form-control{{ $errors->has('prestasi') ? ' is-invalid' : '' }}" value="{{ old('prestasi') }}" required>
                                         <div class="invalid-feedback">
                                             Please fill in the field
                                         </div>
@@ -88,7 +91,7 @@
                                         <label class="form-label" for="penyelenggara">Penyelenggara</label>
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <input type="text" name="penyelenggara" id="penyelenggara" oninput="validatePrestasiAndPenyelenggara(this)" class="form-control{{ $errors->has('penyelenggara') ? ' is-invalid' : '' }}" value="{{ old('penyelenggara') }}" required>
+                                        <input type="text" name="penyelenggara" id="penyelenggara" placeholder="Penyelenggara" oninput="validatePrestasiAndPenyelenggara(this)" class="form-control{{ $errors->has('penyelenggara') ? ' is-invalid' : '' }}" value="{{ old('penyelenggara') }}" required>
                                         <div class="invalid-feedback">
                                             Please fill in the field
                                         </div>
@@ -140,9 +143,9 @@
                                         <label class="form-label" for="waktu">Tgl Lomba</label>
                                     </div>
                                     <div class="form-group col-md-3">
-                                        <input type="date" class="form-control" id="waktu" name="waktu">
+                                        <input type="date" class="form-control" id="waktu" name="waktu" {{ old('waktu') }}>
                                     </div>
-                                </div> 
+                                </div>
 
                                 
 
@@ -152,7 +155,7 @@
                                     </div>
                                     <div class="form-group col-sm-5">
                                         <div class="custom-file" bis_skin_checked="1">
-                                            <input type="file" class="custom-file-input" id="file" name="file" accept=".png, .jpeg" required>
+                                            <input type="file" class="custom-file-input" id="file" name="file" accept=".png, .jpeg, .pdf" required>
                                             <label class="custom-file-label" for="customFile">Choose file</label>
                                         </div>
                                     </div>
@@ -170,6 +173,25 @@
         </section>
     </div>
 @endsection
+
+<div class="modal fade" id="poinPrestasiModal" tabindex="-1" role="dialog" aria-labelledby="poinPrestasiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="poinPrestasiModalLabel">Panduan Poin Prestasi</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body mb-0 pb-0">
+                <div class="form-group">
+                    <img src="{{ asset('panduan-poin-prestasi.jpg') }}" alt="Panduan Poin Prestasi" class="img-fluid">
+                </div>
+            </div>
+            
+        </div>
+    </div>    
+</div>
 
 @push('scripts')
     <!-- JS Libraries -->
@@ -195,7 +217,7 @@
     </script>
 
     <script>    
-        document.addEventListener("DOMContentLoaded", function () {
+            document.addEventListener("DOMContentLoaded", function () {
         // Initialize Select2 for the initial nama field
         $('.select2').select2({
             placeholder: 'Pilih Nama Siswa',
@@ -207,7 +229,7 @@
 
         addButton.addEventListener("click", function () {
             const newRow = `
-            <div style="margin-bottom:10px"id="baris-${index}">
+            <div style="margin-bottom:10px" id="baris-${index}" class="position-relative">
                 <select class="form-control select2" name="nama[]" id="nama_${index}" required>
                     <option></option>
                     @foreach ($siswas as $siswa)
@@ -266,15 +288,22 @@
     }
 
     .hapus-baris {
-        background-color: transparent;
-        border: none;
-        color: red;
-        cursor: pointer;
-        font-size: 20px;
-        padding: 0; /* Menghilangkan padding agar menjadi bulat */
-        margin-left: 500px;
-        margin-top: -34px; Menempelkan tombol ke sisi kiri
-        position: absolute; /* Menjadikan tombol sebagai posisi absolut */
+    background-color: red;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 10px;
+    margin-left: 10px;
+    margin-top: -5px;
+    position: absolute; /* Menjadikan tombol sebagai posisi absolut */
+    left: 580px; /* Adjust this value to move the button to the left */
+    top: 50%;
+    transform: translateY(-50%);
+    }
+
+    .position-relative {
+        position: relative;
     }
 
 </style>

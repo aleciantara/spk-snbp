@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'prestasi')
+@section('title', 'Prestasi Siswa')
 
 @push('style')
     <!-- CSS Libraries -->
@@ -24,6 +24,10 @@
                             <a href="{{ route('siswa.edit', ['nisn' => $siswa->nisn], ['siswa' => $siswa]) }}" class="btn btn-warning">Detail Siswa</a>
                             <a href="{{ route('rapor.edit', ['nisn' => $siswa->nisn, 'siswa' => $siswa]) }}" class="btn btn-primary">Rapor Siswa</a>
                             <a href="{{ route('prestasi.create', ['siswa' => $siswa]) }}" class="btn btn-info" >+ Tambah Prestasi</a>
+                        </div>
+                        @elseif (Auth::user()->role == 'siswa')
+                        <div class="card-header-action">
+                            <a href="{{ route('prestasi.ajukan', ['siswa' => $siswa]) }}" class="btn btn-info" >+ Ajukan Prestasi</a>
                         </div>
                         @endif
                     </div>
@@ -75,7 +79,7 @@
                                         </td>
                                         @if (Auth::user()->role == 'admin')
                                         <td>
-                                            <a class="btn btn-md mb-1 btn-primary fancybox" data-fancybox-type="ajax"><i class="fas fa-download"></i></a>
+                                            {{-- <a class="btn btn-md mb-1 btn-primary fancybox" data-fancybox-type="ajax"><i class="fas fa-download"></i></a> --}}
                                             <a href="{{ route('prestasi.edit', $prestasi->id) }}" class="btn btn-md mb-1 btn-warning"><i class="fas fa-edit"></i></a>
                                             <form method="POST" action="{{ route('prestasi.destroy', ['prestasi' => $prestasi]) }}" class="d-inline">
                                                 @csrf
@@ -109,7 +113,7 @@
     </div>
 @endsection
 
-<!-- import Excel File Modal -->
+{{-- <!-- import Excel File Modal -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -178,7 +182,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 
 @push('scripts')

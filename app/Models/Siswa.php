@@ -10,6 +10,9 @@ class Siswa extends Model
     use HasFactory;
 
     protected $primaryKey = 'nisn';
+    protected $casts = [
+        'nisn' => 'string',
+    ];
 
     protected $fillable = [
         'nisn',

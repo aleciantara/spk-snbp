@@ -84,7 +84,7 @@ class UserSiswaController extends Controller
             'juara' => 'required',
             'tingkat' => 'required',
             'waktu' => 'required',
-            'file' => 'required|mimes:png,jpeg',
+            'file' => 'required|mimes:png,jpeg,pdf',
         ]);
     
         if ($validator->fails()) {
@@ -105,10 +105,11 @@ class UserSiswaController extends Controller
 
         // Handle the file upload
         if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $filename = time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('uploads'), $filename);
-            $prestasi->file = $filename;
+            $fileExtension = $request->file('file')->getClientOriginalExtension();
+
+            // Store the file in the public/templates directory
+            $filePath = $request->file('file')->storeAs('public/prestasis', "prestasi_{$request->input('prestasi')}.{$fileExtension}");
+            $prestasi->file = "prestasi_{$request->input('prestasi')}.{$fileExtension}";
         }
     
         // Save the Prestasi
@@ -126,21 +127,70 @@ class UserSiswaController extends Controller
             }
         }
         
-        return redirect()->route('prestasi.read')->with('success', 'Prestasi added successfully'); // Default URL if there's no previous URL
+        return redirect()->route('prestasi.read')->with('success', 'Prestasi berhasil diajukan, silakan menunggu verifikasi'); // Default URL if there's no previous URL
     }
 
-    public function readSpk()
+    public function readSpk(Request $request)
     {
-        $bobotKriterias = BobotKriteria::all();
-        $kuotaSnbps = KuotaSnbp::all();
+        // $bobotKriterias = BobotKriteria::all();
+        // $kuotaSnbps = KuotaSnbp::all();
         
 
-        $siswas = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
-            ->orderBy('spk_preferensis.total', 'desc')
-            ->select('siswas.*')
-            ->get();
+        // $siswas = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+        //     ->orderBy('spk_preferensis.total', 'desc')
+        //     ->select('siswas.*')
+        //     ->get();
 
-        return view('spk.index', compact('bobotKriterias', 'siswas', 'kuotaSnbps'));
+        // return view('spk.index', compact('bobotKriterias', 'siswas', 'kuotaSnbps'));
+        $bobotKriterias = BobotKriteria::all();
+        $kuotaSnbps = KuotaSnbp::all();
+        $siswas = Siswa::all();
+        $page = $request->input('page', 1);
+        $perPage = 40;
+
+        $queryMIPA = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+                    ->where('peminatan', 'MIPA')
+                    ->orderBy('spk_preferensis.total', 'desc');
+
+        $queryIPS = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+                    ->where('peminatan', 'IPS')
+                    ->orderBy('spk_preferensis.total', 'desc');
+
+        // Initialize the variable
+        $startRankMIPA = 1;
+        $startRankIPS = 1;
+
+        // Only calculate if the current page is greater than 1
+        if ($page > 1) {
+            $startRankMIPA = $queryMIPA->get() // Fetch all entries that match
+                                        ->take(($page - 1) * $perPage)
+                                        ->where('snbp', 'Bersedia')
+                                        ->count() // Take records up to the end of the last page
+                                        +1;
+                                            
+            }
+        if ($page > 1) {
+            $startRankIPS = $queryIPS->get() // Fetch all entries that match
+                                    ->take(($page - 1) * $perPage)
+                                    ->where('snbp', 'Bersedia')
+                                    ->count() // Take records up to the end of the last page
+                                    +1;
+            }
+
+        // Proceed with other operations, for example, pagination
+        $siswasMIPA = $queryMIPA->paginate($perPage, ['*'], 'page', $page);
+        $siswasIPS = $queryIPS->paginate($perPage, ['*'], 'page', $page);
+
+        return view('spk.index', compact(
+            'bobotKriterias','siswasMIPA', 'siswasIPS', 'kuotaSnbps',
+            'startRankMIPA',
+            'startRankIPS', 
+        ));
+    }
+
+    public function readSpkNull()
+    {
+        return view('spk.null');
     }
 
     public function editPassword(){
@@ -151,7 +201,7 @@ class UserSiswaController extends Controller
     {
         $validated = $request->validate([
             'passwordBaru' => 'required|min:8,',
-            'konfirmasiPassword' => 'required|same:passwordBaru,'], 
+            'konfirmasiPassword' => 'required|same:passwordBaru'], 
         );
 
         if (!$validated){

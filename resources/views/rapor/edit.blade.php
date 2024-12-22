@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Data Siswa')
+@section('title', 'Edit Data Rapor')
 
 @push('style')
 <!-- CSS Libraries -->
@@ -20,7 +20,7 @@
             @method('PUT')
             <div class="card">
                 <div class="card-header">
-                    <h4>Form Rapor {{$siswa->nisn}} - {{$siswa->nama}}</h4>
+                    <h4>Form Data Rapor {{$siswa->nisn}} - {{$siswa->nama}}</h4>
                     <div class="card-header-action">
                         <a href="{{ route('siswa.prestasi', ['nisn' => $siswa->nisn]) }}" class="btn btn-info mr-2">Prestasi Siswa</a>
                         <a href="{{ route('siswa.edit', ['nisn' => $siswa->nisn]) }}" class="btn btn-warning">Detail Siswa</a>
@@ -46,43 +46,30 @@
                 <div class="card-body pb-0">
                     <div class="row m-4">
 
-                        
-                        <div class="row col-sm-12">
+                        <div class="row col-sm-12 justify-content-between">
                             <label for="pelajaran" class="col-sm-4 col-form-label">Mata Pelajaran</label>
-                            <label for="semester_1" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 1</label>
-                            <label for="semester_2" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 2</label>
-                            <label for="semester_3" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 3</label>
-                            <label for="semester_4" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 4</label>
-                            <label for="semester_5" class="col-sm-1 mr-2 ml-3 text-center col-form-label">SMT 5</label>
-                            <label for="rata_rata" class="col-sm-1 mr-3 ml-2 text-center col-form-label">Rata2</label>
+                            <label for="semester_1" class="col-sm-1 text-center col-form-label">SMT 1</label>
+                            <label for="semester_2" class="col-sm-1 text-center col-form-label">SMT 2</label>
+                            <label for="semester_3" class="col-sm-1 text-center col-form-label">SMT 3</label>
+                            <label for="semester_4" class="col-sm-1 text-center col-form-label">SMT 4</label>
+                            <label for="semester_5" class="col-sm-1 text-center col-form-label">SMT 5</label>
+                            <label for="rata_rata" class="col-sm-1  text-center col-form-label">Rata2</label>
                         </div>
-
-
+    
                         @foreach ($raporData as $index => $rapor)
-                        <div class="container p-0">
-                            <div class="form-group row col-sm-12">
-                                <input style="width: 280px; height: 27px; margin-right:56px" type="text" name="pelajaran[]" id="pelajaran" class="form-control-sm form-control" value="{{ old('pelajaran.' . $index, $rapor->pelajaran) }}" placeholder="{{ $rapor->pelajaran }}" readonly>
-
-                                @for ($i = 1; $i <= 5; $i++)
-                                <input style="width: 43px; height: 27px; margin-right:56px;" type="text" name="sem_{{ $i }}_nilai_p[]" class="form-control-sm form-control ml-6" placeholder="" value="{{ old("sem_${i}_nilai_p.${index}", $rapor["sem_${i}_nilai_p"]) }}">
-                                @endfor
-
-                                <input style="width: 43px; height: 27px;" type="text" name="rata_nilai_p[]" class="form-control-sm form-control ml-6" placeholder="{{ old("rata_nilai_p.${index}", $rapor["rata_nilai_p"]) }}" readonly>
-                                
-                            </div>
+                        <div class="row col-sm-12 justify-content-between">
+                            <input for="pelajaran" name="pelajaran[]" id="pelajaran" class=" col-sm-4 form-control-sm form-control mb-3" value="{{ old('pelajaran.' . $index, $rapor->pelajaran) }}" placeholder="{{ $rapor->pelajaran }}" readonly>
+                            @for ($i = 1; $i <= 5; $i++)
+                                <input type="text" name="sem_{{ $i }}_nilai_p[]" class="col-sm-1 text-center form-control-sm form-control mb-3 " placeholder="" value="{{ old("sem_${i}_nilai_p.${index}", $rapor["sem_${i}_nilai_p"]) }}" style="padding-left: 0px;" >
+                            @endfor
+                            <input type="text" name="rata_nilai_p[]"  class="col-sm-1 text-center form-control-sm form-control mb-3 " placeholder="{{ old("rata_nilai_p.${index}", $rapor["rata_nilai_p"]) }}" readonly>
                         </div>
                         @endforeach
-                        <div class="container p-0">
-                            <div class="form-group row col-sm-12">
-                                <input style="width: 280px; height: 27px; margin-right:56px" type="text"  class="form-control-sm form-control"  value="Rata-Rata Rapor" readonly>
-
-                                <input style="width: 43px; height: 27px; margin-left:496px" type="text" class="form-control-sm form-control ml-6" value="{{$spkKriteria->rapor}}" readonly>
-                                
-                            </div>
+    
+                        <div class="row col-sm-12 justify-content-between">
+                            <input  type="text"  class=" col-sm-4 form-control-sm form-control " value="Rata-Rata Rapor" readonly>
+                            <input type="text" name="rata_nilai_p[]"  class="col-sm-1 text-center form-control-sm form-control mb-3" value="{{$spkKriteria->rapor}}" readonly>
                         </div>
-
-
-
                     </div>
                 </div>
 
@@ -118,17 +105,17 @@
 }
 
 .no-background-image .form-control:valid {
-  background-image: none !important; /* Disable the background image */
-  padding-right: 0 !important; 
-  background-position: 0 !important;
-  background-size: 0 !important;
+    background-image: none !important; /* Disable the background image */
+    padding-right: 0 !important; 
+    background-position: 0 !important;
+    background-size: 0 !important;
 }
 
 .no-background-image .form-control:invalid {
-  background-image: none !important;
-  padding-right: 0 !important; 
-  background-position: 0  !important;
-  background-size: 0 !important;
+    background-image: none !important;
+    padding-right: 0 !important; 
+    background-position: 0  !important;
+    background-size: 0 !important;
 }
 
 .disable-padding .form-control.is-invalid,

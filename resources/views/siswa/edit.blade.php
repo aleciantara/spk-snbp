@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Data Siswa')
+@section('title', 'Edit Data Siswa')
 
 @push('style')
     <!-- CSS Libraries -->
@@ -84,9 +84,9 @@
                                             <option value="X - MIPA 5" {{ old('kelas_10') == 'X - MIPA 5' ? 'selected' : '' }}>X - MIPA 5</option>
                                             <option value="X - MIPA 6" {{ old('kelas_10') == 'X - MIPA 6' ? 'selected' : '' }}>X - MIPA 6</option>
                                             <option value="X - MIPA 7" {{ old('kelas_10') == 'X - MIPA 7' ? 'selected' : '' }}>X - MIPA 7</option>
-                                            <option value="X - IPS 8" {{ old('kelas_10') == 'X - IPS 8' ? 'selected' : '' }}>X - IPS 8</option>
-                                            <option value="X - IPS 9" {{ old('kelas_10') == 'X - IPS 9' ? 'selected' : '' }}>X - IPS 9</option>
-                                            <option value="X - IPS 10" {{ old('kelas_10') == 'X - IPS 10' ? 'selected' : '' }}>X - IPS 10</option>
+                                            <option value="X - MIPA 8" {{ old('kelas_10') == 'X - MIPA 8' ? 'selected' : '' }}>X - MIPA 8</option>
+                                            <option value="X - IPS 1" {{ old('kelas_10') == 'X - IPS 1' ? 'selected' : '' }}>X - IPS 1</option>
+                                            <option value="X - IPS 2" {{ old('kelas_10') == 'X - IPS 2' ? 'selected' : '' }}>X - IPS 2</option>
                                         </select>
                                         <div class="invalid-feedback">
                                             Please choose an option
@@ -103,9 +103,9 @@
                                             <option value="XI - MIPA 5" {{ old('kelas_11') == 'XI - MIPA 5' ? 'selected' : '' }}>XI - MIPA 5</option>
                                             <option value="XI - MIPA 6" {{ old('kelas_11') == 'XI - MIPA 6' ? 'selected' : '' }}>XI - MIPA 6</option>
                                             <option value="XI - MIPA 7" {{ old('kelas_11') == 'XI - MIPA 7' ? 'selected' : '' }}>XI - MIPA 7</option>
-                                            <option value="XI - IPS 8" {{ old('kelas_11') == 'XI - IPS 8' ? 'selected' : '' }}>XI - IPS 8</option>
-                                            <option value="XI - IPS 9" {{ old('kelas_11') == 'XI - IPS 9' ? 'selected' : '' }}>XI - IPS 9</option>
-                                            <option value="XI - IPS 10" {{ old('kelas_11') == 'XI - IPS 10' ? 'selected' : '' }}>XI - IPS 10</option>
+                                            <option value="XI - MIPA 8" {{ old('kelas_11') == 'XI - MIPA 8' ? 'selected' : '' }}>XI - MIPA 8</option>
+                                            <option value="XI - IPS 1" {{ old('kelas_11') == 'XI - IPS 1' ? 'selected' : '' }}>XI - IPS 1</option>
+                                            <option value="XI - IPS 2" {{ old('kelas_11') == 'XI - IPS 2' ? 'selected' : '' }}>XI - IPS 2</option>
                                         </select>
                                         <div class="invalid-feedback">
                                             Please choose an option
@@ -121,9 +121,9 @@
                                             <option value="XII - MIPA 5" {{ old('kelas_12') == 'XII - MIPA 5' ? 'selected' : '' }}>XII - MIPA 5</option>
                                             <option value="XII - MIPA 6" {{ old('kelas_12') == 'XII - MIPA 6' ? 'selected' : '' }}>XII - MIPA 6</option>
                                             <option value="XII - MIPA 7" {{ old('kelas_12') == 'XII - MIPA 7' ? 'selected' : '' }}>XII - MIPA 7</option>
-                                            <option value="XII - IPS 8" {{ old('kelas_12') == 'XII - IPS 8' ? 'selected' : '' }}>XII - IPS 8</option>
-                                            <option value="XII - IPS 9" {{ old('kelas_12') == 'XII - IPS 9' ? 'selected' : '' }}>XII - IPS 9</option>
-                                            <option value="XII - IPS 10" {{ old('kelas_12') == 'XII - IPS 10' ? 'selected' : '' }}>XII - IPS 10</option>
+                                            <option value="XII - MIPA 8" {{ old('kelas_12') == 'XII - MIPA 8' ? 'selected' : '' }}>XII - MIPA 8</option>
+                                            <option value="XII - IPS 1" {{ old('kelas_12') == 'XII - IPS 1' ? 'selected' : '' }}>XII - IPS 1</option>
+                                            <option value="XII - IPS 2" {{ old('kelas_12') == 'XII - IPS 2' ? 'selected' : '' }}>XII - IPS 2</option>
 
                                         </select>
                                         <div class="invalid-feedback">

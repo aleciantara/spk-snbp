@@ -8,6 +8,7 @@ use App\Http\Controllers\PrestasiController;
 use App\Http\Controllers\SPKController;
 use App\Http\Controllers\SuratController;
 use App\Http\Controllers\UserSiswaController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 use App\Models\Siswa;
@@ -33,10 +34,6 @@ Route::get('/home', function(){
 
 Route::middleware(['auth'])->group(function(){
     Route::middleware(['userAccess:admin'])->group(function () {
-
-        Route::get('/admin/editPassword', [AdminController::class, 'editPassword'])->name('admin.editPassword');
-        Route::put('/admin/updatePassword', [AdminController::class, 'updatePassword'])->name('admin.updatePassword');
-
         Route::get('/siswa', [SiswaController::class, 'index'])->name('siswa.index');
         Route::get('/siswa/create', [SiswaController::class, 'create'])->name('siswa.create');
         Route::post('/siswa/store', [SiswaController::class, 'store'])->name('siswa.store');
@@ -44,6 +41,7 @@ Route::middleware(['auth'])->group(function(){
         Route::put('/siswa/update/{nisn}', [SiswaController::class, 'update'])->name('siswa.update');
         Route::get('siswa/prestasi/{nisn}', [SiswaController::class, 'prestasi'])->name('siswa.prestasi');
         Route::delete('/siswa/{siswa}', [SiswaController::class, 'destroy'])->name('siswa.destroy');
+        Route::get('/siswa/mundurSnbp/{nisn}', [SiswaController::class, 'mundurSnbp'])->name('siswa.mundurSnbp');
 
         Route::get('/siswa/import', [SiswaController::class, 'import'])->name('siswa.import');
         Route::post('/siswa/import', [SiswaController::class, 'import']);
@@ -56,23 +54,33 @@ Route::middleware(['auth'])->group(function(){
         Route::post('/prestasi/store', [PrestasiController::class, 'store'])->name('prestasi.store');
         Route::get('/prestasi/edit/{id}', [PrestasiController::class, 'edit'])->name('prestasi.edit');
         Route::put('/prestasi/update/{id}', [PrestasiController::class, 'update'])->name('prestasi.update');
+        Route::get('/prestasi/downloadGambar/{id}', [PrestasiController::class, 'downloadGambar'])->name('prestasi.downloadGambar');
         Route::delete('/prestasi/{prestasi}', [PrestasiController::class, 'destroy'])->name('prestasi.destroy');
 
         Route::get('/spk', [SPKController::class, 'index'])->name('spk.index');
+        Route::get('/spkDetail', [SPKController::class, 'detailspk'])->name('spk.detailspk');
         Route::get('/spkPrint', [SPKController::class, 'print'])->name('spk.print');
         Route::get('/spkKriteria', [SPKController::class, 'kriteria'])->name('spk.kriteria');
         Route::get('/spkNormalisasi', [SPKController::class, 'normalisasi'])->name('spk.normalisasi');
 
+        Route::put('/setBobot', [SPKController::class, 'setBobot'])->name('spk.setBobot');
+        Route::put('/setKuota', [SPKController::class, 'setKuota'])->name('spk.setKuota');
+
         Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
         Route::post('/storeTemplateSurat', [SuratController::class, 'storeTemplateSurat'])->name('surat.storeTemplateSurat');
-        Route::delete('/destroy/{template}', [SuratController::class, 'destroyTemplate'])->name('surat.destroyTemplate');
-        Route::delete('/destroy/{surat}', [SuratController::class, 'destroySurat'])->name('surat.destroySurat');
+        Route::delete('/destroyTemplate/{template}', [SuratController::class, 'destroyTemplate'])->name('surat.destroyTemplate');
+        Route::delete('/destroySurat/{surat}', [SuratController::class, 'destroySurat'])->name('surat.destroySurat');
         Route::get('/surat/edit/{id}', [SuratController::class, 'editSurat'])->name('surat.editSurat');
         Route::put('/surat/update/{id}', [SuratController::class, 'updateSurat'])->name('surat.updateSurat');
 
+        Route::get('/admin/editPassword', [AdminController::class, 'editPassword'])->name('admin.editPassword');
+        Route::put('/admin/updatePassword', [AdminController::class, 'updatePassword'])->name('admin.updatePassword');
 
-        Route::put('/setBobot', [SPKController::class, 'setBobot'])->name('spk.setBobot');
-        Route::put('/setKuota', [SPKController::class, 'setKuota'])->name('spk.setKuota');
+        Route::get('/users', [UserController::class, 'index'])->name('user.index');
+        Route::post('/user/storeAdmin', [UserController::class, 'storeAdmin'])->name('user.storeAdmin');
+        Route::put('/user/updatePassword/{id}', [UserController::class, 'updatePassword'])->name('user.updatePassword');
+        Route::delete('/user/{user}', [UserController::class, 'destroyUser'])->name('user.destroyUser');
+        Route::get('/user/generateAkunSiswa', [UserController::class, 'generateAkunSiswa'])->name('user.generateAkunSiswa');
 
     });
 
@@ -87,17 +95,13 @@ Route::middleware(['auth'])->group(function(){
         Route::post('/prestasi/storePengajuanPrestasi', [UserSiswaController::class, 'storePengajuanPrestasi'])->name('prestasi.storePengajuanPrestasi');
         
         Route::get('/spk/read', [UserSiswaController::class, 'readSpk'])->name('spk.read');
+        // Route::get('/spk/read', [UserSiswaController::class, 'readSpkNull'])->name('spk.read');
 
         Route::get('/editPassword', [UserSiswaController::class, 'editPassword'])->name('userSiswa.editPassword');
         Route::put('/updatePassword', [UserSiswaController::class, 'updatePassword'])->name('userSiswa.updatePassword');
 
         Route::get('/templateSurat/download/{template}', [SuratController::class, 'downloadTemplate'])->name('surat.downloadTemplate');
         Route::post('/storeSurat', [SuratController::class, 'storeSurat'])->name('surat.storeSurat');
-        // Route::get('siswa/prestasi/{nisn}', [SiswaController::class, 'prestasi'])->name('siswa.prestasi');
-        // Route::get('/prestasi/create/{siswa?}', [PrestasiController::class, 'create'])->name('prestasi.create');
-        // Route::post('/prestasi/store', [PrestasiController::class, 'store'])->name('prestasi.store');
-        // Route::get('/editPassword', [UserSiswaController::class, 'editPassword'])->name('siswa.editPassword');
-        // Route::put('/updatePassword', [UserSiswaController::class, 'updatePassword'])->name('siswa.updatePassword');
     });
 
     Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');

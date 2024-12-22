@@ -10,7 +10,7 @@ class CreateSpkKriteriasTable extends Migration
     {
         Schema::create('spk_kriterias', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('nisn');
+            $table->string('nisn');
             $table->foreign('nisn')->references('nisn')->on('siswas')->onDelete('cascade');
             $table->float('rapor')->nullable(); // Assuming the average value is stored as a decimal
             $table->float('prestasi')->nullable();

@@ -9,6 +9,10 @@ class Surat extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'nisn' => 'string',
+    ];
+
     protected $fillable = [
         'nisn',
         'judul',

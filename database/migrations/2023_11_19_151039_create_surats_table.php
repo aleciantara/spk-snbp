@@ -9,7 +9,7 @@ class CreateSuratsTable extends Migration
     {
         Schema::create('surats', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('nisn');
+            $table->string('nisn');
             $table->foreign('nisn')->references('nisn')->on('siswas')->onDelete('cascade');
             $table->string('judul');
             $table->text('catatan'); 

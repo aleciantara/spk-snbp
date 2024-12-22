@@ -8,7 +8,7 @@ class CreateNewSiswasTable2 extends Migration
     public function up()
     {
         Schema::create('siswas', function (Blueprint $table) {
-            $table->bigInteger('nisn')->primary();
+            $table->string('nisn')->primary();
             $table->string('nama');
             $table->string('kelas_10')->nullable();
             $table->string('kelas_11')->nullable();

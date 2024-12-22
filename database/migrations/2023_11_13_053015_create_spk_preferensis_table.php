@@ -10,7 +10,7 @@ class CreateSpkPreferensisTable extends Migration
     {
         Schema::create('spk_preferensis', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('nisn');
+            $table->string('nisn');
             $table->foreign('nisn')->references('nisn')->on('siswas')->onDelete('cascade');
             $table->float('rapor', 5, 4)->nullable(); 
             $table->float('prestasi', 5, 4)->default(0);

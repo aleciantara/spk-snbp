@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Data Siswa')
+@section('title', 'Edit Data Rapor')
 
 @push('style')
 <!-- CSS Libraries -->

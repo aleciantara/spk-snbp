@@ -11,7 +11,7 @@ class CreatePrestasiSiswaTable extends Migration
         Schema::create('prestasi_siswa', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('prestasi_id');
-            $table->bigInteger('nisn');
+            $table->string('nisn');
             $table->foreign('prestasi_id')->references('id')->on('prestasis')->onDelete('cascade');
             $table->foreign('nisn')->references('nisn')->on('siswas')->onDelete('cascade');
             $table->timestamps();

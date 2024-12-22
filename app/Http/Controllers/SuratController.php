@@ -47,7 +47,7 @@ class SuratController extends Controller
             }
 
             // Fetch the data
-            $surats = $query->get();
+            $surats = $query->paginate(30);
 
         }
         return view("surat/index", compact("surats", "templates"));

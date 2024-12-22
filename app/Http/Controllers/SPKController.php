@@ -17,43 +17,83 @@ use Illuminate\Support\Facades\View;
 
 class SPKController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $bobotKriterias = BobotKriteria::all();
         $kuotaSnbps = KuotaSnbp::all();
         $siswas = Siswa::all();
+        $page = $request->input('page', 1);
+        $perPage = 40;
 
-        //extract spk_kriterias value for each siswas
-        foreach ($siswas as $siswa){
-            $this->storeSpkKriteria($siswa->nisn);
+        $isInitialRequest = $request->input('initial', false);
+
+        if ($isInitialRequest) {
+            //extract spk_kriterias value for each siswas
+            foreach ($siswas as $siswa){
+                $this->storeSpkKriteria($siswa->nisn);
+            }
+
+            //Retrieve all max value for each criteria
+            $maxRapor    = $this->getMaxRapor();
+            $maxPrestasi = $this->getMaxPrestasi();
+            $maxSikap   = $this->getMaxSikap();
+
+            // dd($maxPrestasi,$maxRapor,$maxSikap);
+
+            //normalisasi data kriteria siswa
+            $spkKriterias= SpkKriteria::all();
+            foreach ($spkKriterias as $spkKriteria){
+                $this->normalizeSpkKriteria($spkKriteria, $maxRapor, $maxPrestasi, $maxSikap);
+            }
+
+            //hitung nilai preferensi siswa sesuai bobot kriteria
+            $spkNormalisasis= SpkNormalisasi::all();
+            foreach ($spkNormalisasis as $spkNormalisasi){
+                $this->hitungSkorPreferensi($spkNormalisasi);
+            }
         }
+        
+        $queryMIPA = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+                    ->where('peminatan', 'MIPA')
+                    ->orderBy('spk_preferensis.total', 'desc');
 
-        //normalisasi data kriteria siswa
-        $spkKriterias= SpkKriteria::all();
+        $queryIPS = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+                    ->where('peminatan', 'IPS')
+                    ->orderBy('spk_preferensis.total', 'desc');
 
-        foreach ($spkKriterias as $spkKriteria){
-            $this->normalizeSpkKriteria($spkKriteria);
-        }
+        // Initialize the variable
+        $startRankMIPA = 1;
+        $startRankIPS = 1;
 
-        //hitung nilai preferensi siswa sesuai bobot kriteria
-        $spkNormalisasis= SpkNormalisasi::all();
+        // Only calculate if the current page is greater than 1
+        if ($page > 1) {
+            $startRankMIPA = $queryMIPA->get() // Fetch all entries that match
+                                        ->take(($page - 1) * $perPage)
+                                        ->where('snbp', 'Bersedia')
+                                        ->count() // Take records up to the end of the last page
+                                        +1;
+                                            
+            }
+        if ($page > 1) {
+            $startRankIPS = $queryIPS->get() // Fetch all entries that match
+                                    ->take(($page - 1) * $perPage)
+                                    ->where('snbp', 'Bersedia')
+                                    ->count() // Take records up to the end of the last page
+                                    +1;
+            }
 
-        foreach ($spkNormalisasis as $spkNormalisasi){
-            $this->hitungSkorPreferensi($spkNormalisasi);
-        }
+        // Proceed with other operations, for example, pagination
+        $siswasMIPA = $queryMIPA->paginate($perPage, ['*'], 'page', $page);
+        $siswasIPS = $queryIPS->paginate($perPage, ['*'], 'page', $page);
 
-        $siswas = Siswa::join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
-            // ->where('siswas.snbp','=', 'Bersedia')
-            // ->when($search, function ($query) use ($search) {
-            //     $query->where('siswas.nama', 'like', '%' . $search . '%')
-            //         ->orWhere('siswas.nisn', 'like', '%' . $search . '%');
-            // })
-            ->orderBy('spk_preferensis.total', 'desc')
-            ->select('siswas.*')
-            ->get();
-
-        return view('spk.index', compact('bobotKriterias', 'siswas', 'kuotaSnbps'));
+    
+        return view('spk.index', compact(
+            'bobotKriterias','siswasMIPA', 'siswasIPS', 'kuotaSnbps',
+            'startRankMIPA',
+            'startRankIPS', 
+        ));
     }
+
 
     public function print()
     {
@@ -69,32 +109,240 @@ class SPKController extends Controller
         return  view('spk.print', compact('siswas', 'kuotaSnbps'));
     }
 
-    public function kriteria()
+    public function storeSpkKriteria($nisn)
+    {
+        $rataRapor = $this->getRataRapor($nisn);
+
+        $poinPrestasi = $this->getpoinPrestasi($nisn);
+
+        $sikap = $this->getSpkSikap($nisn);
+
+        SpkKriteria::updateOrCreate(
+            ['nisn' => $nisn],
+            ['rapor' => $rataRapor, 
+            'prestasi' => $poinPrestasi, 
+            'sikap' => $sikap]
+        );
+    }
+
+    public function normalizeSpkKriteria($spkKriteria, $maxRapor, $maxPrestasi, $maxSikap)
+    {
+        $normalizedRapor    = $spkKriteria->rapor / $maxRapor;
+        $normalizedPrestasi = $maxPrestasi != 0 ? $spkKriteria->prestasi / $maxPrestasi : 0;
+        $normalizedSikap    = $spkKriteria->sikap / $maxSikap;
+
+        SpkNormalisasi::updateOrCreate(
+            ['nisn'    => $spkKriteria->nisn],
+            ['rapor'   => $normalizedRapor, 
+            'prestasi' => $normalizedPrestasi, 
+            'sikap'    => $normalizedSikap]
+        );
+    }
+
+    public function hitungSkorPreferensi($spkNormalisasi)
+    {
+        $bobotRapor    = $this->getBobotRapor();
+        $bobotPrestasi = $this->getBobotPrestasi();
+        $bobotSikap    = $this->getBobotSikap();
+
+        $preferensiRapor    = $spkNormalisasi->rapor * $bobotRapor;
+        $preferensiPrestasi = $spkNormalisasi->prestasi * $bobotPrestasi;
+        $preferensiSikap    = $spkNormalisasi->sikap * $bobotSikap;
+        $totalPreferensi    = $preferensiRapor + $preferensiPrestasi + $preferensiSikap;
+
+        SpkPreferensi::updateOrCreate(
+            ['nisn'    => $spkNormalisasi->nisn],
+            ['rapor'   => $preferensiRapor, 
+            'prestasi' => $preferensiPrestasi, 
+            'sikap'    => $preferensiSikap,
+            'total'    => $totalPreferensi]
+        );
+    }
+
+    public function detailSPK()
+    {
+        // Fetching MIPA students data
+        $siswasMIPA = DB::table('siswas')
+            ->join('spk_kriterias', 'siswas.nisn', '=', 'spk_kriterias.nisn')
+            ->join('spk_normalisasis', 'siswas.nisn', '=', 'spk_normalisasis.nisn')
+            ->join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+            ->where('siswas.peminatan', 'MIPA')
+            ->select(
+                'siswas.nisn',
+                'siswas.nama',
+                'spk_kriterias.rapor as kriteria_c1',
+                'spk_kriterias.prestasi as kriteria_c2',
+                'spk_kriterias.sikap as kriteria_c3',
+                'spk_normalisasis.rapor as normalisasi_c1',
+                'spk_normalisasis.prestasi as normalisasi_c2',
+                'spk_normalisasis.sikap as normalisasi_c3',
+                'spk_preferensis.rapor as preferensi_c1',
+                'spk_preferensis.prestasi as preferensi_c2',
+                'spk_preferensis.sikap as preferensi_c3',
+                'spk_preferensis.total'
+            )
+            ->orderBy('siswas.nisn') // Order by NISN
+            ->get();
+
+        // Fetching IPS students data
+        $siswasIPS = DB::table('siswas')
+            ->join('spk_kriterias', 'siswas.nisn', '=', 'spk_kriterias.nisn')
+            ->join('spk_normalisasis', 'siswas.nisn', '=', 'spk_normalisasis.nisn')
+            ->join('spk_preferensis', 'siswas.nisn', '=', 'spk_preferensis.nisn')
+            ->where('siswas.peminatan', 'IPS')
+            ->select(
+                'siswas.nisn',
+                'siswas.nama',
+                'spk_kriterias.rapor as kriteria_c1',
+                'spk_kriterias.prestasi as kriteria_c2',
+                'spk_kriterias.sikap as kriteria_c3',
+                'spk_normalisasis.rapor as normalisasi_c1',
+                'spk_normalisasis.prestasi as normalisasi_c2',
+                'spk_normalisasis.sikap as normalisasi_c3',
+                'spk_preferensis.rapor as preferensi_c1',
+                'spk_preferensis.prestasi as preferensi_c2',
+                'spk_preferensis.sikap as preferensi_c3',
+                'spk_preferensis.total'
+            )
+            ->orderBy('siswas.nisn') // Order by NISN
+            ->get();
+
+        // Function to add rank based on total score
+        function addRank($siswas)
+        {
+            // Rank assignment
+            $rankedSiswas = $siswas->sortByDesc('total')->values();
+            foreach ($rankedSiswas as $index => $siswa) {
+                $siswa->rank = $index + 1;
+            }
+
+            // Sort back by NISN for display purposes
+            return $rankedSiswas->sortBy('nisn')->values();
+        }
+
+        $siswasMIPA = addRank($siswasMIPA);
+        $siswasIPS = addRank($siswasIPS);
+
+        // Display the results
+        return view('spk.detail', compact('siswasMIPA', 'siswasIPS'));
+    }
+    
+    public function kriteria(Request $request)
     {
         $bobotKriterias = BobotKriteria::all();
         $kuotaSnbps = KuotaSnbp::all();
         
-        $siswas = Siswa::join('spk_kriterias', 'siswas.nisn', '=', 'spk_kriterias.nisn')
-            ->select('siswas.*', DB::raw('SUM(spk_kriterias.rapor + spk_kriterias.prestasi + spk_kriterias.sikap) AS total'))
-            ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.kelas_10', 'siswas.kelas_11', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at') // Group by nisn to avoid duplicate rows
-            ->orderBy('total', 'desc')
-            ->get();
+        
+        // $siswas = Siswa::join('spk_kriterias', 'siswas.nisn', '=', 'spk_kriterias.nisn')
+        //     ->select('siswas.*','spk_kriterias.rapor' , 'spk_kriterias.prestasi' , 'spk_kriterias.sikap', DB::raw('SUM(spk_kriterias.rapor + spk_kriterias.prestasi + spk_kriterias.sikap) AS total'))
+        //     ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.kelas_10', 'siswas.kelas_11', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at', 'spk_kriterias.rapor' , 'spk_kriterias.prestasi' , 'spk_kriterias.sikap') // Group by nisn to avoid duplicate rows
+        //     ->orderBy('total', 'desc')
+        //     ->get();
+        // dd($siswas);
+        $page = $request->input('page', 1);
+        $perPage = 20;
 
-        return view('spk.kriteria', compact('bobotKriterias', 'siswas', 'kuotaSnbps'));
+        $queryMIPA = Siswa::join('spk_kriterias', 'siswas.nisn', '=', 'spk_kriterias.nisn')
+                    ->where('peminatan', 'MIPA')
+                    ->select('siswas.nisn', 'siswas.nama', 'siswas.snbp', 'siswas.kelas_12','spk_kriterias.rapor' , 'spk_kriterias.prestasi' , 'spk_kriterias.sikap', DB::raw('SUM(spk_kriterias.rapor + spk_kriterias.prestasi + spk_kriterias.sikap) AS total'))
+                    ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.snbp', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at', 'spk_kriterias.rapor' , 'spk_kriterias.prestasi' , 'spk_kriterias.sikap') // Group by nisn to avoid duplicate rows
+                    ->orderBy('total', 'desc');
+        // dd($queryMIPA->get());
+                    
+        
+
+        $queryIPS = Siswa::join('spk_kriterias', 'siswas.nisn', '=', 'spk_kriterias.nisn')
+                    ->where('peminatan', 'IPS')
+                    ->select('siswas.nisn', 'siswas.nama',  'siswas.kelas_12','spk_kriterias.rapor' , 'spk_kriterias.prestasi' , 'spk_kriterias.sikap', DB::raw('SUM(spk_kriterias.rapor + spk_kriterias.prestasi + spk_kriterias.sikap) AS total'))
+                    ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at', 'spk_kriterias.rapor' , 'spk_kriterias.prestasi' , 'spk_kriterias.sikap') // Group by nisn to avoid duplicate rows
+                    ->orderBy('total', 'desc');
+                    
+
+        $startRankMIPA = 1;
+        $startRankIPS = 1;
+
+        // Only calculate if the current page is greater than 1
+        if ($page > 1) {
+            $startRankMIPA = $queryMIPA->get() // Fetch all entries that match
+                                        ->take(($page - 1) * $perPage)
+                                        ->where('snbp', 'Bersedia')
+                                        ->count() // Take records up to the end of the last page
+                                        +1;
+                                            
+        }
+        if ($page > 1) {
+            $startRankIPS = $queryIPS->get() // Fetch all entries that match
+                                    ->take(($page - 1) * $perPage)
+                                    ->where('snbp', 'Bersedia')
+                                    ->count() // Take records up to the end of the last page
+                                    +1;
+        }
+
+        // Proceed with other operations, for example, pagination
+        $siswasMIPA = $queryMIPA->paginate($perPage, ['*'], 'page', $page);
+        $siswasIPS = $queryIPS->paginate($perPage, ['*'], 'page', $page);
+
+    
+        return view('spk.kriteria', compact(
+            'bobotKriterias','siswasMIPA', 'siswasIPS', 'kuotaSnbps',
+            'startRankMIPA',
+            'startRankIPS', 
+        ));
     }
 
-    public function normalisasi()
+    public function normalisasi(Request $request)
     {
         $bobotKriterias = BobotKriteria::all();
         $kuotaSnbps = KuotaSnbp::all();
+        $page = $request->input('page', 1);
+        $perPage = 20;
 
-        $siswas = Siswa::join('spk_normalisasis', 'siswas.nisn', '=', 'spk_normalisasis.nisn')
-            ->select('siswas.*', DB::raw('SUM(spk_normalisasis.rapor + spk_normalisasis.prestasi + spk_normalisasis.sikap) AS total'))
-            ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.kelas_10', 'siswas.kelas_11', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at') // Group by nisn to avoid duplicate rows
-            ->orderBy('total', 'desc')
-            ->get();
+        $queryMIPA = Siswa::join('spk_normalisasis', 'siswas.nisn', '=', 'spk_normalisasis.nisn')
+                    ->where('peminatan', 'MIPA')
+                    ->select('siswas.nisn', 'siswas.nama', 'siswas.snbp', 'siswas.kelas_12','spk_normalisasis.rapor' , 'spk_normalisasis.prestasi' , 'spk_normalisasis.sikap', DB::raw('SUM(spk_normalisasis.rapor + spk_normalisasis.prestasi + spk_normalisasis.sikap) AS total'))
+                    ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.snbp', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at', 'spk_normalisasis.rapor' , 'spk_normalisasis.prestasi' , 'spk_normalisasis.sikap') // Group by nisn to avoid duplicate rows
+                    ->orderBy('total', 'desc');
+        // dd($queryMIPA->get());
+                    
+        
 
-        return view('spk.normalisasi', compact('bobotKriterias', 'siswas', 'kuotaSnbps'));
+        $queryIPS = Siswa::join('spk_normalisasis', 'siswas.nisn', '=', 'spk_normalisasis.nisn')
+                    ->where('peminatan', 'IPS')
+                    ->select('siswas.nisn', 'siswas.nama',  'siswas.kelas_12','spk_normalisasis.rapor' , 'spk_normalisasis.prestasi' , 'spk_normalisasis.sikap', DB::raw('SUM(spk_normalisasis.rapor + spk_normalisasis.prestasi + spk_normalisasis.sikap) AS total'))
+                    ->groupBy('siswas.nisn', 'siswas.nama', 'siswas.kelas_12','siswas.sikap', 'siswas.peminatan','siswas.agama',  'siswas.snbp','siswas.angkatan', 'siswas.updated_at', 'siswas.created_at', 'spk_normalisasis.rapor' , 'spk_normalisasis.prestasi' , 'spk_normalisasis.sikap') // Group by nisn to avoid duplicate rows
+                    ->orderBy('total', 'desc');
+                    
+
+        $startRankMIPA = 1;
+        $startRankIPS = 1;
+
+        // Only calculate if the current page is greater than 1
+        if ($page > 1) {
+            $startRankMIPA = $queryMIPA->get() // Fetch all entries that match
+                                        ->take(($page - 1) * $perPage)
+                                        ->where('snbp', 'Bersedia')
+                                        ->count() // Take records up to the end of the last page
+                                        +1;
+                                            
+        }
+        if ($page > 1) {
+            $startRankIPS = $queryIPS->get() // Fetch all entries that match
+                                    ->take(($page - 1) * $perPage)
+                                    ->where('snbp', 'Bersedia')
+                                    ->count() // Take records up to the end of the last page
+                                    +1;
+        }
+
+        // Proceed with other operations, for example, pagination
+        $siswasMIPA = $queryMIPA->paginate($perPage, ['*'], 'page', $page);
+        $siswasIPS = $queryIPS->paginate($perPage, ['*'], 'page', $page);
+
+    
+        return view('spk.normalisasi', compact(
+            'bobotKriterias','siswasMIPA', 'siswasIPS', 'kuotaSnbps',
+            'startRankMIPA',
+            'startRankIPS', 
+        ));
     }
 
     public function setBobot(Request $request)
@@ -115,7 +363,6 @@ class SPKController extends Controller
             return redirect()->back()->with('error','Total Bobot Kriteria Harus Berjumlah 1');
 
         }
-        
     }
 
     private function updateBobot($namaKriteria, $bobot)
@@ -164,31 +411,42 @@ class SPKController extends Controller
         $kuotaSnbp->save();
     }
 
-    public function storeSpkKriteria($nisn)
+    private function getRataRapor1($nisn): string
     {
-        //get average rapor
-        $rataRapor = $this->getRataRapor($nisn);
+        $allRataNilaiP = Rapor::where('nisn', operator: $nisn)->pluck('rata_nilai_p')->toArray();
+        
+        $rataRapor = (array_sum($allRataNilaiP)/count($allRataNilaiP));
+        $rataRapor = number_format($rataRapor, 6);
 
-        $poinPrestasi = $this->getpoinPrestasi($nisn);
-
-        $sikap = $this->getSpkSikap($nisn);
-
-        SpkKriteria::updateOrCreate(
-            ['nisn' => $nisn],
-            ['rapor' => $rataRapor, 
-            'prestasi' => $poinPrestasi, 
-            'sikap' => $sikap]
-        );
+        return $rataRapor;
     }
 
     private function getRataRapor($nisn)
     {
-        $allRataNilaiP = Rapor::where('nisn', $nisn)->pluck('rata_nilai_p')->toArray();
-        
-        $rataRapor = (array_sum($allRataNilaiP)/count($allRataNilaiP));
-        $rataRapor = number_format($rataRapor, 2);
+        $nilaiPRecords = Rapor::where('nisn', $nisn)
+                        ->select('sem_1_nilai_p', 'sem_2_nilai_p', 'sem_3_nilai_p', 'sem_4_nilai_p', 'sem_5_nilai_p')
+                        ->get()
+                        ->toArray();
 
-        return $rataRapor;
+        $nilaiPArray = [];
+
+        // Loop through the records and collect all non-null nilai_p values
+        foreach ($nilaiPRecords as $record) {
+            // Loop through each semester's nilai_p values
+            foreach ($record as $nilaiP) {
+                if (!is_null($nilaiP)) {
+                    $nilaiPArray[] = $nilaiP;
+                }
+            }
+        }
+
+        if (count($nilaiPArray) > 0) {
+            $average = array_sum($nilaiPArray) / count($nilaiPArray);
+        } else {
+            $average = 0;
+        }
+
+        return $average;
     }
 
     private function getPoinPrestasi($nisn)
@@ -233,25 +491,6 @@ class SPKController extends Controller
         } else {
             return 4;
         }
-        
-    }
-
-    public function normalizeSpkKriteria($spkKriteria)
-    {
-        $maxRapor    = 100;
-        $maxPrestasi = $this->getMaxPrestasi();
-        $maxSikap    = 5;
-
-        $normalizedRapor    = $spkKriteria->rapor / $maxRapor;
-        $normalizedPrestasi = $spkKriteria->prestasi / $maxPrestasi;
-        $normalizedSikap    = $spkKriteria->sikap / $maxSikap;
-
-        SpkNormalisasi::updateOrCreate(
-            ['nisn'    => $spkKriteria->nisn],
-            ['rapor'   => $normalizedRapor, 
-            'prestasi' => $normalizedPrestasi, 
-            'sikap'    => $normalizedSikap]
-        );
     }
 
     private function getMaxRapor()
@@ -264,26 +503,9 @@ class SPKController extends Controller
         return SpkKriteria::max('prestasi');
     }
 
-    public function hitungSkorPreferensi($spkNormalisasi)
+    private function getMaxSikap()
     {
-        $bobotRapor    = $this->getBobotRapor();
-        $bobotPrestasi = $this->getBobotPrestasi();
-        $bobotSikap    = $this->getBobotSikap();
-
-        $preferensiRapor    = $spkNormalisasi->rapor * $bobotRapor;
-        $preferensiPrestasi = $spkNormalisasi->prestasi * $bobotPrestasi;
-        $preferensiSikap    = $spkNormalisasi->sikap * $bobotSikap;
-        $totalPreferensi    = $preferensiRapor + $preferensiPrestasi + $preferensiSikap;
-
-        // dd($preferensiRapor);
-
-        SpkPreferensi::updateOrCreate(
-            ['nisn'    => $spkNormalisasi->nisn],
-            ['rapor'   => $preferensiRapor, 
-            'prestasi' => $preferensiPrestasi, 
-            'sikap'    => $preferensiSikap,
-            'total'    => $totalPreferensi]
-        );
+        return SpkKriteria::max('sikap');
     }
 
     private function getBobotRapor()

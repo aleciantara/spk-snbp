@@ -7,8 +7,11 @@ use App\Models\SpkKriteria;
 use Illuminate\Http\Request;
 use App\Models\Siswa;
 use App\Models\Rapor;
+use App\Models\User;
 use App\Imports\ImportRaporSiswa;
+use App\Imports\ValidateExcelImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\HeadingRowImport;
 
 class SiswaController extends Controller
 {
@@ -32,7 +35,10 @@ class SiswaController extends Controller
         })->when(!empty($kelasXIIFilters), function ($query) use ($kelasXIIFilters) {
             $query->whereIn('kelas_12', $kelasXIIFilters);
         })->orderBy('updated_at', 'desc') // Sort by created_at in descending order
-        ->paginate(30);
+        ->paginate(30)
+        ->withQueryString();
+
+        // dd($siswas);
 
         return view('siswa.index', compact('siswas'));
     }
@@ -47,7 +53,7 @@ class SiswaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nisn' => 'required|integer|unique:siswas,nisn',
+            'nisn' => 'required|unique:siswas,nisn',
             'nama' => 'required|string|max:255|regex:/^[A-Za-z\s\-]+$/u',
             'kelas_10' => 'required|string',
             'kelas_11' => 'required|string',
@@ -130,7 +136,7 @@ class SiswaController extends Controller
         $this->storeSpkKriteria($request->input('nisn'));
 
         // Optionally, you can redirect to a success page or show a success message
-        return redirect()->route('rapor.edit', ['nisn' => $request->nisn])->with('success', 'Siswa data has been saved successfully.');
+        return redirect()->route('rapor.edit', ['nisn' => $request->nisn])->with('success', 'Siswa berhasil ditambahkan');
     }
 
 
@@ -197,9 +203,8 @@ class SiswaController extends Controller
         // Fetch the updated student data
         $siswa = Siswa::where('nisn', $request->nisn)->firstOrFail();
 
-        return view('siswa.edit', ['siswa' => $siswa])->with('success', 'Student updated successfully');
+        return view('siswa.edit', ['siswa' => $siswa])->with('success', 'Data siswa Berhasil diupdate');
     }
-
 
     public function import(Request $request)
     {
@@ -220,17 +225,36 @@ class SiswaController extends Controller
                 // dd('condition met');
                 return redirect()->back()->with('error', 'Nilai Kelas XII Semester Genap tidak diperhitungkan dalam seleksi eligible SNBP ');
             } else {
+
+                
                 // The semester meets the requirement
                 $file = $request->file('excel_file');
                 $kelasBerapa = $request->kelasBerapa;
                 $peminatanApa = $request->peminatanApa;
                 $kelasApa = $request->kelasApa;
                 $semesterApa = $request->semester;
-        
-                // Import the data using your custom import class
-                Excel::import(new ImportRaporSiswa($kelasBerapa, $peminatanApa, $kelasApa, $semesterApa), $file);
-        
-                return redirect()->back()->with('success', 'Data imported successfully!');   
+
+                $headings = (new HeadingRowImport(5))->toArray($file);
+
+                // Find the index of "pkn" in the $headings array
+                $indexPkn = array_search("pkn", $headings[0][0]);
+                
+                if ($indexPkn == false){
+                    return redirect()->back()->with('error', 'Struktur Excel tidak sesuai standar, silakan lakukan expor ulang rapor melalui website e-rapor');
+                }
+
+                try {
+                    // Validate import file if it matches the expected structures
+                    Excel::import(new ValidateExcelImport($indexPkn, $peminatanApa), $file);
+                    
+                    // Import the data using your custom import class
+                    Excel::import(new ImportRaporSiswa($kelasBerapa, $peminatanApa, $kelasApa, $semesterApa, $indexPkn), $file);
+                    return redirect()->back()->with('success', 'Data berhasil di-impor!');   
+                    
+                } catch (\Exception $e) {
+                    return redirect()->back()->with('error', $e->getMessage());
+
+                }
             }
         }
 
@@ -254,10 +278,15 @@ class SiswaController extends Controller
     
     public function destroy(Siswa $siswa)
     {
+        $user = User::where('email', $siswa->nisn)->first();
 
+        // Check if the user exists
+        if ($user) {
+            $user->delete();
+        }
         $siswa->delete();
 
-        return redirect()->route('siswa.index')->with('success', 'Student deleted successfully');
+        return redirect()->route('siswa.index')->with('success', 'Siswa berhasil dihapus');
     }
 
     public function storeSpkKriteria($nisn)
@@ -279,12 +308,23 @@ class SiswaController extends Controller
         );
     }
 
+    public function mundurSnbp($nisn)
+    {
+        Siswa::where('nisn', $nisn)
+            ->update([
+            'snbp'     => 'Tidak Bersedia',
+        ]);
+
+        return redirect()->back()->with('success', 'Siswa telah dilepas dari list SNBP, Jangan lupa untuk mengubah status surat menjadi verified');
+
+    }
+
     private function getRataRapor($nisn)
     {
         $allRataNilaiP = Rapor::where('nisn', $nisn)->pluck('rata_nilai_p')->toArray();
         
         $rataRapor = (array_sum($allRataNilaiP)/count($allRataNilaiP));
-        $rataRapor = number_format($rataRapor, 2);
+        $rataRapor = number_format($rataRapor, 6);
 
         return $rataRapor;
     }

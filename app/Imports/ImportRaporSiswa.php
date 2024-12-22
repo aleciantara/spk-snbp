@@ -1,6 +1,7 @@
 <?php
 namespace app\Imports;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
@@ -21,18 +22,22 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
     {
         return 8; // Specify the starting row for data extraction
     }
+    
 
     private $kelasBerapa;
     private $kelasApa;
     private $semesterApa;
     private $peminatanApa;
+    private $indexPkn;
+    
 
-    public function __construct($kelasBerapa, $peminatanApa, $kelasApa, $semesterApa)
+    public function __construct($kelasBerapa, $peminatanApa, $kelasApa, $semesterApa, $indexPkn)
     {
         $this->kelasBerapa = $kelasBerapa;
         $this->kelasApa = $kelasApa;
         $this->semesterApa = $semesterApa;
         $this->peminatanApa = $peminatanApa;
+        $this->indexPkn = $indexPkn;
     }
 
     public function model(array $row)
@@ -46,6 +51,7 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
         $peminatan = $this->peminatanApa;
         $agama = $row[3];
         $angkatan = $this->getAngkatan();
+        $columnNilai = $this->indexPkn-1;
 
         // Check if the "siswa" record with the given NISN exists
         $siswa = Siswa::where('nisn', $nisn)->first();
@@ -61,9 +67,10 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
         } else {
             //save kelas siswa
             $kelasField = $this->getKelasField($kelas);
-    
+                        
             if ($kelasField) {
                 $siswa->$kelasField = $kelas;
+                $siswa->updated_at = Carbon::now();
             }
 
             // Save the updated Siswa object
@@ -71,7 +78,7 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
         }
         
         //store data rapor
-        $this->storeRapor($semester, $nisn, $row);
+        $this->storeRapor($semester, $nisn, $row, $columnNilai);
         // Store SPK Kriteria
         $this->storeSpkKriteria($nisn);
 
@@ -90,7 +97,8 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
     
         // Use the getKelasField function to determine the field name
         $kelasField = $this->getKelasField($kelas);
-    
+        
+        $siswa->$kelasField = $kelas;
         if ($kelasField) {
             $siswa->$kelasField = $kelas;
         }
@@ -139,7 +147,7 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
         }
     }
 
-    private function storeRapor($semester, $nisn, $row)
+    private function storeRapor($semester, $nisn, $row, $columnNilai)
     {
         // Get all the records for the subject and semester
         $records = Rapor::where('nisn', $nisn)
@@ -161,10 +169,11 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
                 'sem_5_nilai_p' => $records[$index]['sem_5_nilai_p'] ?? null,
             ];
 
-            $raporData['sem_' . $semester . '_nilai_p'] = $row[$index + 6];
+
+            $raporData['sem_' . $semester . '_nilai_p'] = $row[$index + $columnNilai];
 
             if ($index == 0){
-                $raporData['sem_' . $semester . '_nilai_p'] = $this->getNilaiAgama($row);
+                $raporData['sem_' . $semester . '_nilai_p'] = $this->getNilaiAgama($row, $this->indexPkn);
             }
         
             // Calculate rata-rata (average) for nilai_P
@@ -173,6 +182,8 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
 
             for ($i = 1; $i <= 5; $i++) {
                 if (!empty($raporData["sem_" . $i . "_nilai_p"])) {
+                    // var_dump($totalPNilai, $raporData["sem_" . "5" . "_nilai_p"]);
+                    
                     $totalPNilai += $raporData["sem_" . $i . "_nilai_p"];
                     $filledPNilaiCount++;
                 }
@@ -199,18 +210,16 @@ class ImportRaporSiswa implements ToModel, WithStartRow, WithHeadingRow
         }
     }
 
-    private function getNilaiAgama($row)
-    {
-        if (!empty($row[4])){
-            return $row[4];
-        }elseif (!empty($row[5])){
-            return $row[5];
-        }elseif (!empty($row[6])){
-            return $row[6];
-        }else{
-            return null;
+    private function getNilaiAgama($row, $pknIndex)
+{
+    for ($i = 4; $i < $pknIndex; $i++) {
+        if (!empty($row[$i])) {
+            return $row[$i];
         }
     }
+
+    return null;
+}
 
     private function storeSpkKriteria($nisn)
     {

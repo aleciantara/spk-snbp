@@ -22,8 +22,9 @@
                     <div class="card-header">
                         <h4>Edit Surat</h4>
                         <div class="card-header-action">
-                            <a href="{{ route('siswa.edit', ['nisn' => $surat->siswa->nisn]) }}" class="btn btn-info mr-2">Prestasi Siswa</a>
+                            <a href="{{ route('siswa.edit', ['nisn' => $surat->siswa->nisn]) }}" class="btn btn-warning mr-2">Data Siswa</a>
                             <a href="{{ route('rapor.edit', ['nisn' => $surat->siswa->nisn]) }}" class="btn btn-primary">Rapor Siswa</a>
+                            <a href="{{ route('siswa.prestasi', ['nisn' => $surat->siswa->nisn]) }}" class="btn btn-info mr-2">Prestasi Siswa</a>
                         </div>
                     </div>
                         
@@ -124,6 +125,7 @@
                                 
                         <div class="card-footer pt-0">
                             <button type="submit" class="btn btn-lg btn-primary float-right">Save</button>
+                            <a href="{{ route('siswa.mundurSnbp', ['nisn' => $surat->siswa->nisn]) }}" class="btn btn-lg btn-danger float-right mr-2">Mundur dari SNBP</a>
                         </div>
                     </div>
                 </form>

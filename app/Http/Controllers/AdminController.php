@@ -32,7 +32,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'passwordBaru' => 'required|min:8,',
-            'konfirmasiPassword' => 'required|same:passwordBaru,'], 
+            'konfirmasiPassword' => 'required|same:passwordBaru'], 
         );
 
         if (!$validated){
@@ -41,7 +41,7 @@ class AdminController extends Controller
         else {
             $user = Auth::user();
             if (!$user) {
-                return redirect()->route('editPassword')->with('error', 'User not found.');
+                return redirect()->route('editPassword')->with('error', 'User tidak ditemukan.');
             }
         
             $user->passwordBaru = Hash::make($request->input('passwordBaru'));

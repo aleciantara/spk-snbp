@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class SessionController extends Controller
 {
@@ -25,8 +26,17 @@ class SessionController extends Controller
         ];
         if (Auth::attempt($infoLogin)){
             return redirect('/dashboard'); 
-        }else{
-            return redirect('')->withErrors('Username dan Password tidak sesuai')->withInput();
+        }else {
+            // Check if the username/email exists in the database
+            $userExists = User::where('email', $infoLogin['email'])->exists();
+        
+            if ($userExists) {
+                // If the user exists but the password is incorrect
+                return redirect()->back()->withErrors('Username dan Password tidak sesuai')->withInput();
+            } else {
+                // If the user does not exist in the database
+                return redirect()->back()->withErrors('Username tidak terdaftar dalam sistem')->withInput();
+            }
         }
     }
 
@@ -34,7 +44,4 @@ class SessionController extends Controller
         Auth::logout();
         return redirect('/');
     }
-
-    
 }
- 

@@ -16,13 +16,17 @@
         <div class="section-header">
             <h1>Edit Data Prestasi</h1>
         </div>
+        
         <div>
             <form method="POST" action="{{ route('prestasi.update', ['id' => $prestasi->id]) }}" class="needs-validation" enctype="multipart/form-data" novalidate="">
                 @csrf
                 @method('PUT')
                 <div class="card">
                     <div class="card-header">
-                        <h4>Form Edit Data Prestasi</h4>
+                        <h4>Form Data Prestasi</h4>
+                        <div class="card-header-action">
+                            <a class="btn btn-primary" data-toggle="modal" data-target="#poinPrestasiModal">Panduan Poin Prestasi</a>
+                        </div>
                     </div>
                         @if($errors->any())
                             <div class="alert alert-danger">
@@ -34,18 +38,18 @@
                             </div>
                         @endif
 
-                        <div class="card-body pb-0">
+                        <div class="card-body ">
                             <div class="row m-4">
 
                                 <div class="form-row col-md-10">
                                     <div class="form-group col-md-2">
-                                        <label class="form-label" for="judul">Nama Siswa</label>
+                                        <label class="form-label" for="nama">Nama Siswa</label>
                                     </div>
 
                                     
-                                    <div class="form-group col-md-8 " id="namaFields">
+                                    <div class="form-group col-md-8" id="namaFields">
                                         @foreach ($prestasi->siswas as $index => $siswa)
-                                            <div style="margin-bottom: 10px" id="baris-{{ $index }}">
+                                            <div style="margin-bottom: 10px; position: relative;" id="baris-{{ $index }}">
                                                 <select class="form-control select2" name="nama[]" id="nama_{{ $index }}" required>
                                                     <option value="{{ $siswa->nisn }}" {{ old('nama_' . $index) == $siswa->nisn ? 'selected' : '' }}>
                                                         {{ $siswa->nisn }} - {{ $siswa->nama }}
@@ -56,16 +60,16 @@
                                                         </option>
                                                     @endforeach
                                                 </select>
-                                                <button type="button" class="btn btn-danger btn-sm hapus-baris rounded-circle" data-index="{{$index}}">x</button>
+                                                <button type="button" class="btn btn-danger btn-sm hapus-baris rounded-circle" data-index="{{ $index }}">x</button>
                                             </div>
                                         @endforeach
-
-                                        <div  id="NamaSiswaBaru">
+                                    
+                                        <div id="NamaSiswaBaru">
                                             <!-- Baris baru akan ditambahkan di sini -->
                                         </div>
-            
+                                    
                                         <button type="button" id="tambahNamaSiswa" class="btn btn-light">
-                                                + Nama Siswa
+                                            + Nama Siswa
                                         </button>
                                     </div>
                                 </div>
@@ -145,14 +149,27 @@
                                 </div>                          
                                 
 
+                                {{-- <div class="form-row col-md-10">
+                                    <div class="form-group col-md-2">
+                                        <label class="form-label" for="poin">Poin</label>
+                                    </div>
+                                    <div class="form-group col-sm-2">
+                                        <input type="number" class="form-control" oninput="validatePoin(this)" id="poin" name="poin" value="{{ $prestasi->poin }}" step="1">
+                                    </div>
+                                </div> --}}
+
                                 <div class="form-row col-md-10">
                                     <div class="form-group col-md-2">
                                         <label class="form-label" for="poin">Poin</label>
                                     </div>
                                     <div class="form-group col-sm-2">
-                                        <input type="number" class="form-control" oninput="validatePoin(this)" id="poin" name="poin" value="{{ $prestasi->poin }}" step="10">
+                                        <input type="text" class="form-control" oninput="evaluateExpression(this)" id="poin" name="poin" value="{{ $prestasi->poin }}">
+                                        <input type="hidden" id="raw_poin">
+                                        <span id="calculated_poin" style="display:none;"></span>
+                                        <button class="btn btn-primary" type="button" id="apply_poin" style="display:none;" onclick="applyCalculatedValue()">Apply</button>
                                     </div>
                                 </div>
+                                
 
                                 <div class="form-row col-md-10">
                                     <div class="form-group col-md-2">
@@ -177,9 +194,10 @@
                                     </div>
                                     <div class="form-group col-md-6 " >
                                         @if ($prestasi->file)  
-                                            <a href="{{ asset('uploads/' . $prestasi->file) }}" data-fancybox data-caption="{{ $prestasi->file }}">
-                                                <img src="{{ asset('uploads/' . $prestasi->file) }}" width="200px" />
-                                            </a>                              
+                                            {{-- <a href="{{ asset('prestasis/' . $prestasi->file) }}" data-fancybox data-caption="{{ $prestasi->file }}">
+                                                <img src="{{ asset('prestasis/' . $prestasi->file) }}" width="200px" />
+                                            </a>                               --}}
+                                            <a href="{{ route('prestasi.downloadGambar', ['id' => $prestasi->id]) }}" target="_blank" class="btn btn-md mb-1 btn-primary fancybox" data-fancybox-type="ajax">Download Gambar <i class="fas fa-download"></i></a>
                                             
                                         @else
                                             <p>No image available</p>
@@ -193,7 +211,7 @@
                                     </div>
                                     <div class="form-group col-sm-5">
                                         <div class="custom-file" bis_skin_checked="1">
-                                            <input type="file" class="custom-file-input" id="file" name="file" accept=".png, .jpeg" >
+                                            <input type="file" class="custom-file-input" id="file" name="file" accept=".png, .jpeg, .pdf" >
                                             <label class="custom-file-label" for="customFile">Ubah file</label>
                                         </div>
                                     </div>
@@ -212,6 +230,25 @@
             </div>
         </section>
     </div>
+
+    <div class="modal fade" id="poinPrestasiModal" tabindex="-1" role="dialog" aria-labelledby="poinPrestasiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="poinPrestasiModalLabel">Panduan Poin Prestasi</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body mb-0 pb-0">
+                    <div class="form-group">
+                        <img src="{{ asset('panduan-poin-prestasi.jpg') }}" alt="Panduan Poin Prestasi" class="img-fluid">
+                    </div>
+                </div>
+                
+            </div>
+        </div>    
+    </div>
 @endsection
 
 @push('scripts')
@@ -224,6 +261,8 @@
     <script src="{{ asset('library/chocolat/dist/js/jquery.chocolat.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+
 
     <!-- Page Specific JS File -->
     <script src="{{ asset('js/page/index-0.js') }}"></script>
@@ -244,8 +283,7 @@
     </script>
 
     <script>    
-        document.addEventListener("DOMContentLoaded", function () {
-
+    document.addEventListener("DOMContentLoaded", function () {
         // Initialize Select2 for the initial nama field
         $('.select2').select2({
             placeholder: 'Pilih Nama Siswa',
@@ -256,10 +294,9 @@
         const namaFields = document.querySelector("#namaFields");
         let index = {{ isset($index) ? $index + 1 : 1 }};
 
-
         addButton.addEventListener("click", function () {
             const newRow = `
-            <div style="margin-bottom:10px"id="baris-${index}">
+            <div style="margin-bottom:10px; position: relative;" id="baris-${index}">
                 <select class="form-control select2" name="nama[]" id="nama_${index}" required>
                     <option></option>
                     @foreach ($siswas as $siswa)
@@ -288,13 +325,7 @@
                 }
             }
         });    
-
-        
-
     });
-
-    
-
     </script>
 
 <script>
@@ -308,6 +339,45 @@
             customFileLabel.textContent = 'Choose file';
         }
     });
+
+    let timeout = null;
+    
+    function evaluateExpression(input) {
+        clearTimeout(timeout);
+        const rawInput = input.value;
+        document.getElementById('raw_poin').value = rawInput;
+
+        timeout = setTimeout(() => {
+            try {
+                // Evaluate the expression using math.js
+                const result = math.evaluate(rawInput);
+                
+                // If result is a valid number, show it formatted to two decimal places
+                if (!isNaN(result)) {
+                    const formattedResult = result.toFixed(2);
+                    document.getElementById('calculated_poin').innerText = `Calculated: ${formattedResult}`;
+                    document.getElementById('calculated_poin').style.display = 'inline';
+                    document.getElementById('apply_poin').style.display = 'inline';
+                    document.getElementById('apply_poin').dataset.calculatedValue = formattedResult;
+                } else {
+                    document.getElementById('calculated_poin').style.display = 'none';
+                    document.getElementById('apply_poin').style.display = 'none';
+                }
+            } catch (e) {
+                // If there is an error in evaluation, hide the calculated result and button
+                document.getElementById('calculated_poin').style.display = 'none';
+                document.getElementById('apply_poin').style.display = 'none';
+                console.error("Invalid expression");
+            }
+         }, 500); // Adjust the debounce delay as needed
+    }
+
+    function applyCalculatedValue() {
+        const calculatedValue = document.getElementById('apply_poin').dataset.calculatedValue;
+        document.getElementById('poin').value = calculatedValue;
+    }
+
+
 </script>
 
 
@@ -323,15 +393,23 @@
     }
 
     .hapus-baris {
-        background-color: transparent;
-        border: none;
-        color: red;
-        cursor: pointer;
-        font-size: 20px;
-        padding: 0; /* Menghilangkan padding agar menjadi bulat */
-        margin-left: 500px;
-        margin-top: -34px; Menempelkan tombol ke sisi kiri
-        position: absolute; /* Menjadikan tombol sebagai posisi absolut */
+    background-color: red;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 10px;
+    margin-left: 10px;
+    margin-top: -5px;
+    position: absolute; /* Menjadikan tombol sebagai posisi absolut */
+    left: 580px; /* Adjust this value to move the button to the left */
+    top: 50%;
+    transform: translateY(-50%);
+    }
+
+
+    .position-relative {
+        position: relative;
     }
 
 </style>
